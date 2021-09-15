@@ -65,3 +65,37 @@ java -Xmx8G -jar picard.jar RevertSam \
     REMOVE_ALIGNMENT_INFORMATION=true \
     TMP_DIR=<path to temp directory>/working_temp_rsn
 ```
+**Step 4) Mark adapters:** Using Picard and the "MarkIlluminaAdapters" function, this step takes an uBAM file from the previous step and rewrites it with new adapter-trimming tags.  Per tutorial 6483 on the GATK website: https://software.broadinstitute.org/gatk/documentation/article?id=6483 This is needed so that the sequenced adapters contribute minimally to the alignments.  The tool adds an "XT" tag to a read record to mark the 5' start position of the specified adapter sequence.  It also produces a metrics file.  Note: each .bam from Step 3 may produce multiple uBAM files depending on how many read groups are present.  Each individual uBAM must undergo "MarkIlluminaAdapters".  
+
+```
+ALIGNMENT_RUN=<Sample ID>
+INPUT=<path to uBAM file>
+OUTPUT_DIR=<path to output directory>"/"$ALIGNMENT_RUN
+
+java -Xmx8G -jar picard.jar MarkIlluminaAdapters \
+    I=$INPUT \
+    O=$OUTPUT_DIR/uBAM_markedAdapters.bam \
+    M=$OUTPUT_DIR/adapter_metrics.txt \
+    TMP_DIR=<path to temp directory>/working_temp
+```
+**Step 5) Convert uBAM to FASTQ:** Now we use Picard and the "SamToFastq" function to take the uBAM files, which have been modified so that Illumina adapter sequences are marked with the "XT" tag, and converts them to .fastq files for further processing.  It produces a .fastq file in which all extant meta data (read group info, alignment info, flags and tags) are purged.  What remains are the read query names prefaced with the @ symbol, read sequences and read base quality scores.  The meta data will be added back later in the MergeBam step.  See GATK Tutorial 6483 for details: https://software.broadinstitute.org/gatk/documentation/article?id=6483
+
+By setting the CLIPPING_ATTRIBUTE to "XT" and by setting the CLIPPING_ACTION to 2, the program effectively removes the previously marked adapter sequences by changing their quality scores to two.  This makes it so they don't contribute to downstream read alignment or alignment scoring metrics.
+
+This program will produce an interleaved .fastq file (paired reads are retained and marked appropriately in the same .fastq file).  This can then be fed into BWA_mem with the "-p" option.
+
+The NON_PF=true option is set per the GATK tutorial.  This tells the program to retain reads marked with the 0x200 flag bit that denotes reads that do not pass quality controls (reads failing platform or vendor quality checks).
+```
+ALIGNMENT_RUN=<Sample ID>
+INPUT=<path to input directory>"/"$ALIGNMENT_RUN"/uBAM_markedAdapters.bam"
+OUTPUT_DIR=<path to output directory>"/"$ALIGNMENT_RUN
+
+java -Xmx8G -jar picard.jar SamToFastq \
+    I=$INPUT \
+    FASTQ=$OUTPUT_DIR/interleaved.fastq \
+    CLIPPING_ATTRIBUTE=XT \
+    CLIPPING_ACTION=2 \
+    INTERLEAVE=true \
+    NON_PF=true \
+    TMP_DIR=<path to temp directory>/working_temp
+```
