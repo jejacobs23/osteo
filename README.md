@@ -31,3 +31,37 @@ fasta_dir=<path to hg38 .fasta directory>
 
 bwa-0.7.17/bwa index -a bwtsw $fasta_dir/Homo_sapiens_assembly38.fasta
 ```
+**Step 3) Revert .bam files:** The downloaded osteo sequence files have already been processed and aligned.  In order to use your own analysis workflow, the files first must be reverted back to their pre-processed and unmapped form.  To accomplish this, we first use the program, Picard, with the "RevertSam" function.  This takes an aligned .bam file and removes alignment information in order to generate an unmapped BAM (uBAM).  Details on this part of the workflow can be found in the GATK Tutorial #6484: (How to) Generate an unmapped BAM from FASTQ or aligned BAM. https://gatkforums.broadinstitute.org/gatk/discussion/6484#latest#top.  It removes alignment information and any recalibrated base quality information.  It makes it possible to re-analyze the file using your own pipeline.
+
+Standard tags cleared by default are NM, UQ, PG, MD, MQ, SA, MC and AS.  Additionally, the OQ tag is removed by the default "RESTORE_ORIGINAL_QUALITIES" parameter.  Any nonstandard tags should be removed.  To list all tags within a BAM, use the command: 
+`samtools view input.bam | cut -f 12- | tr '\t' '\n' | cut -d ':' -f 1 | awk '{ if(!x[$1]++) { print }}'` You should leave the RG tag.
+
+The "SANITIZE" option removes reads that cause problems for certain tools such as MarkIlluminaAdapters. It removeds paired reads with missing mates, duplicate records and records with mismatches in length of bases and qualities.
+
+For paired read files: because each read in a pair has the same query name, they are listed consecutively.  We make sure to alter the previous sort order.  Coordinate sorted reads result in the aligner incorrectly estimating insert size from blocks of paired reads as they are not randomly distributed.
+
+I use the "OUTPUT_BY_READGROUP=true" option in order to create a separate file for each readgroup.  This is neccessary because there are two different MarkDuplicate steps (one before merging each readgroup and one after merging).  This ensures that both optical and PCR duplicates are identified (see GATK tutorial 6483)
+
+The "MAX_DISCARD_FRACTION" option is informational only.  It does nto affect processing.
+
+The "SORT_ORDER=queryname", "RESTORE_ORIGINAL_QUALITIES=true", REMOVE_DUPLICATE_INFORMATION=true" and "REMOVE_ALIGNMENT_INFORMATION=true" options are all default but I kept them in the code anyway.
+
+```
+ALIGNMENT_RUN=<Sample ID>
+INPUT=<path to input directory>"/"$ALIGNMENT_RUN".grch38_NoAltAnalysisSet_bwa.bam"
+OUTPUT_DIR=<path to output directory>"/"$ALIGNMENT_RUN
+
+java -Xmx8G -jar picard.jar RevertSam \
+    I=$INPUT \
+    O=$OUTPUT_DIR \
+    OUTPUT_BY_READGROUP=true \
+    SANITIZE=true \
+    MAX_DISCARD_FRACTION=0.005 \
+    ATTRIBUTE_TO_CLEAR=XS \
+    ATTRIBUTE_TO_CLEAR=XA \
+    SORT_ORDER=queryname \
+    RESTORE_ORIGINAL_QUALITIES=true \
+    REMOVE_DUPLICATE_INFORMATION=true \
+    REMOVE_ALIGNMENT_INFORMATION=true \
+    TMP_DIR=<path to temp directory>/working_temp_rsn
+```
