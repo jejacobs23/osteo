@@ -25,7 +25,7 @@ wget ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/Homo_sapiens_a
 
 wget ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/Homo_sapiens_assembly38.fasta.fai
 ```
-**Step 2) Create a BWA genome index files:** The BWA "index" command is used to create the genome index files from the previously downloaded hg38 .fasta genome sequence.  These files will then be used in the upcoming alignment step.  BWA places the output files into the same foloder as the genome .fasta file was called from.  The BWA index files were then moved to a directory names "BWA_indexes" for later use.
+**Step 2) Create a BWA genome index files:** The BWA "index" command is used to create the genome index files from the previously downloaded hg38 .fasta genome sequence.  These files will then be used in the upcoming alignment step.  BWA places the output files into the same foloder as the genome .fasta file was called from.  The BWA index files were then moved to a directory named "BWA_indexes/GATK_hg38" for later use.
 
 The -a bwtsw flag will specify that we want to use the indexing algorithm that is capable of handling the whole human genome.
 
@@ -68,7 +68,7 @@ java -Xmx8G -jar picard.jar RevertSam \
     REMOVE_ALIGNMENT_INFORMATION=true \
     TMP_DIR=<path to temp directory>/working_temp_rsn
 ```
-**Step 4) Mark adapters:** Using Picard and the "MarkIlluminaAdapters" function, this step takes an uBAM file from the previous step and rewrites it with new adapter-trimming tags.  Per tutorial 6483 on the GATK website: https://software.broadinstitute.org/gatk/documentation/article?id=6483 This is needed so that the sequenced adapters contribute minimally to the alignments.  The tool adds an "XT" tag to a read record to mark the 5' start position of the specified adapter sequence.  It also produces a metrics file.  Note: each .bam from Step 3 may produce multiple uBAM files depending on how many read groups are present.  Each individual uBAM must undergo "MarkIlluminaAdapters".  
+**Step 4) Mark adapters:** Using Picard and the "MarkIlluminaAdapters" function, this step takes an uBAM file from the previous step and rewrites it with new adapter-trimming tags.  Per tutorial 6483 on the GATK website: https://software.broadinstitute.org/gatk/documentation/article?id=6483 This is needed so that the sequenced adapters contribute minimally to the alignments.  The tool adds an "XT" tag to a read record to mark the 5' start position of the specified adapter sequence.  It also produces a metrics file.  Note: each .bam from Step 3 may produce multiple uBAM files depending on how many read groups are present.  Each individual uBAM must undergo "MarkIlluminaAdapters".  Separate MarkIlluminaAdapter steps were carried out for the tumor and matched normal samples.
 
 ```
 ALIGNMENT_RUN=<Sample ID>
@@ -81,7 +81,7 @@ java -Xmx8G -jar picard.jar MarkIlluminaAdapters \
     M=$OUTPUT_DIR/adapter_metrics.txt \
     TMP_DIR=<path to temp directory>/working_temp
 ```
-**Step 5) Convert uBAM to FASTQ:** Now we use Picard and the "SamToFastq" function to take the uBAM files, which have been modified so that Illumina adapter sequences are marked with the "XT" tag, and converts them to .fastq files for further processing.  It produces a .fastq file in which all extant meta data (read group info, alignment info, flags and tags) are purged.  What remains are the read query names prefaced with the @ symbol, read sequences and read base quality scores.  The meta data will be added back later in the MergeBam step.  See GATK Tutorial 6483 for details: https://software.broadinstitute.org/gatk/documentation/article?id=6483
+**Step 5) Convert uBAM to FASTQ:** Now we use Picard and the "SamToFastq" function to take the uBAM files, which have been modified so that Illumina adapter sequences are marked with the "XT" tag, and converts them to .fastq files for further processing.  It produces a .fastq file in which all extant meta data (read group info, alignment info, flags and tags) are purged.  What remains are the read query names prefaced with the @ symbol, read sequences and read base quality scores.  The meta data will be added back later in the MergeBam step.  See GATK Tutorial 6483 for details: https://software.broadinstitute.org/gatk/documentation/article?id=6483.  Separate SamToFastq steps were carried out for the tumor and matched normal samples.
 
 By setting the CLIPPING_ATTRIBUTE to "XT" and by setting the CLIPPING_ACTION to 2, the program effectively removes the previously marked adapter sequences by changing their quality scores to two.  This makes it so they don't contribute to downstream read alignment or alignment scoring metrics.
 
@@ -101,4 +101,18 @@ java -Xmx8G -jar picard.jar SamToFastq \
     INTERLEAVE=true \
     NON_PF=true \
     TMP_DIR=<path to temp directory>/working_temp
+```
+**Step 6) Alignment of sequencing reads to the hg38 genome:** The program BWA is used with the "mem" function to align sequencing reads to the hg38 reference genome.  Sequencing reads from each lane are aligned individually.  They will later be combined into a single .sam file for each sample.  Separate alignments are carried out for the tumor and matched normal samples.  See GATK Tutorial 6483 for details: https://software.broadinstitute.org/gatk/documentation/article?id=6483
+
+The "-M" flag tells the program to mark shorter split hits as secondary (for Picard compatibility)
+
+The "-t" flag tells the program how many threads to use.
+
+the "-p" flag tells the program that the input contains interleaved paired reads.
+```
+fasta_dir=<path to BWA index files created in Step 2>
+ALIGNMENT_RUN=<Sample ID>
+input=<path to input directory>"/"$ALIGNMENT_RUN"/lane_"${SLURM_ARRAY_TASK_ID}"_interleaved.fastq"
+
+bwa-0.7.17/bwa mem -M -t 32 -p $fasta_dir/Homo_sapiens_assembly38.fasta $input
 ```
