@@ -188,7 +188,7 @@ file_2=$INPUT_DIR"/MergedBamAlignment_postalt_lane_2.bam"
 #           .
 #           .
 #           .
-#file_<n>=$INPUT_DIR"/MergedBamAlignment_postalt_lane_<n>.bam"
+file_<n>=$INPUT_DIR"/MergedBamAlignment_postalt_lane_<n>.bam"
 
 java -Xmx8G -jar picard.jar MergeSamFiles \
     I=$file_1 \
