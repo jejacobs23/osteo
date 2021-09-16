@@ -173,3 +173,31 @@ java -Xmx16G -jar picard.jar MergeBamAlignment \
     ATTRIBUTES_TO_RETAIN=XS \
     TMP_DIR=<path to temp directory>/working_temp_mban
 ```
+**Step 9) Merge BAM files:** Here, we use Picard and the "MergeSamFiles" function to take the individual alignemnts from each of the WGS lanes and merge them into one complete .bam file
+
+I have also included the "SORT_ORDER=coordinate" option in order to ensure that the .bam file is sorted correctly for downstread applications
+```
+#for n lanes
+
+ALIGNMENT_RUN=<Sample ID>
+INPUT_DIR=<path to input directory>"/"$ALIGNMENT_RUN
+OUTPUT_DIR=<path to output directory>"/"$ALIGNMENT_RUN
+#
+file_1=$INPUT_DIR"/MergedBamAlignment_postalt_lane_1.bam"
+file_2=$INPUT_DIR"/MergedBamAlignment_postalt_lane_2.bam"
+#           .
+#           .
+#           .
+#file_<n>=$INPUT_DIR"/MergedBamAlignment_postalt_lane_<n>.bam"
+
+java -Xmx8G -jar picard.jar MergeSamFiles \
+    I=$file_1 \
+    I=$file_2 \
+#           .
+#           .
+#           .
+    I=$file_<n> \
+    SORT_ORDER=coordinate \
+    O=$OUTPUT_DIR/aligned.bam \
+    TMP_DIR=<path to temp directory>/working_temp_msn
+```
