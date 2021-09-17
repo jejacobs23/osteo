@@ -5,7 +5,7 @@ Workflow for identifying single-nucleotide-variants (SNVs) in osteosarcoma Whole
 - These analyses were carried out on the OHSU cluster computing system (Exacloud) using CentOS 7.7.1908 unless otherwise noted
 - Exacloud uses the job scheduler, Slurm, for job submissions.  See separate files for Slurm submit scripts.
 - Alignment of sequencing reads was accomplished using the Burrows-Wheeler Aligner.  The version used was bwa-0.7.17
-- GATK version 3.6 (Picard included)
+- GATK version 4.0.12.0 (Picard included)
 - All Python scripts were run on Python version 2.7.13 unless otherwise noted.  
 
 # Workflow
@@ -220,4 +220,30 @@ java -Xmx8G -jar picard.jar MarkDuplicates \
     VALIDATION_STRINGENCY=SILENT \
     M=$OUTPUT_DIR/Markdup_metrics.txt \
     TMP_DIR=<path to temp directory>/working_temp_mdn
+```
+**Step 11) Download hg38 known sites of variation:** The following file was downloaded from the GATK resource bundle on 8/17/2018 and saved to a directory named "hg38_osteo".  The file was then unzipped.
+```
+wget ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/dbsnp_146.hg38.vcf.gz
+gunzip dbsnp_146.hg38.vcf.gz
+```
+**Step 12) Index Feature File:** The .vcf file downloaded in Step 11 is indexed using the GATK tool, "IndexFeatureFile.  This will allow for querying features by a genomic interval.
+```
+INPUT_FILE=<path to directory containing the .vcf file downloaded in Step 11>"/dbsnp_146.hg38.vcf"
+
+gatk --java-options "-Xmx4g" IndexFeatureFile -F $INPUT_FILE
+```
+**Step 11) Base Quality Score Recalibration:** The GATK tool, "BaseRecalibrator" is used to take a .bam file, the GATK reference for hg38 as well as a file containing the known sites of variation in hg38 according to dbsnp (downloaded from GATK site).  It produces a recal_data.table as the output which consists of several tables:
+- The list of arguments
+- The quantized qualities talbe
+- The recalibration table by read group
+- The recalibration talbe by quality score
+- The recalibration table for all the optional covariates
+```
+ALIGNMENT_RUN=<Sample ID>
+REF=<path to directory containing the hg38 genome files downloaded in Step 1>"/Homo_sapiens_assembly38.fasta"
+INPUT_FILE=<path to input directory>"/"$ALIGNMENT_RUN"/rg_added_aligned_MarkedDup.bam"
+KNOWN_SITES=<path to directory containing the .vcf file downloaded in Step 11>"/dbsnp_146.hg38.vcf"
+OUTPUT_DIR=<path to output directory>"/"$ALIGNMENT_RUN
+
+gatk --java-options "-Xmx4g" BaseRecalibrator -R $REF -I $INPUT_FILE --known-sites $KNOWN_SITES -O $OUTPUT_DIR/recal_data.table
 ```
