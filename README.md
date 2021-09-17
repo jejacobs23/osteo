@@ -201,3 +201,23 @@ java -Xmx8G -jar picard.jar MergeSamFiles \
     O=$OUTPUT_DIR/aligned.bam \
     TMP_DIR=<path to temp directory>/working_temp_msn
 ```
+**Step 10) Mark Duplicates:** Here, we use Picard with the "MarkDuplicates" function to mark any duplicate reads from a sequence alignment file.  Separate MarkDuplicate steps were carried out for the tumor and matched normal samples.
+
+Per the GATK pipeline, I've included the CREATE_INDEX=true command which will create a index for the outputed .bam file.  This is needed
+for downstream GATK tools
+
+Also per the GATK pipeline, I've included the VALIDATION_STRINGENCY=SILENT command.
+```
+ALIGNMENT_RUN=<Sample ID>
+INPUT_FILE=<path to input directory>"/"$ALIGNMENT_RUN"/aligned.bam"
+OUTPUT_DIR=<path to output directory>"/"$ALIGNMENT_RUN
+
+java -Xmx8G -jar picard.jar MarkDuplicates \
+    I=$INPUT_FILE \
+    O=$OUTPUT_DIR/rg_added_aligned_MarkedDup.bam \
+    CREATE_INDEX=true \
+    TAGGING_POLICY=All \
+    VALIDATION_STRINGENCY=SILENT \
+    M=$OUTPUT_DIR/Markdup_metrics.txt \
+    TMP_DIR=<path to temp directory>/working_temp_mdn
+```
