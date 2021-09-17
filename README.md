@@ -247,3 +247,27 @@ OUTPUT_DIR=<path to output directory>"/"$ALIGNMENT_RUN
 
 gatk --java-options "-Xmx4g" BaseRecalibrator -R $REF -I $INPUT_FILE --known-sites $KNOWN_SITES -O $OUTPUT_DIR/recal_data.table
 ```
+**Step 14) 2nd Pass Base Quality Score Recalibration:** The GATK tool, "BaseRecalibrator" is used to take the .bam file that was produced by the first past BQSR step and run a second pass using the GATK reference for hg38 as well as a file containing the known sites of variation in hg38 according to dbsnp (downloaded from GATK site).  It produces a second recal_data.table as the output that can be used in the "AnalyzeCovariates" step.
+```
+ALIGNMENT_RUN=<Sample ID>
+REF=<path to directory containing the hg38 genome files downloaded in Step 1>"/Homo_sapiens_assembly38.fasta"
+INPUT_FILE=<path to input directory>"/"$ALIGNMENT_RUN"/recal_reads.bam"
+KNOWN_SITES=<path to directory containing the .vcf file downloaded in Step 11>"/dbsnp_146.hg38.vcf"
+OUTPUT_DIR=<path to output directory>"/"$ALIGNMENT_RUN
+
+gatk --java-options "-Xmx4g" BaseRecalibrator -R $REF -I $INPUT_FILE --known-sites $KNOWN_SITES -O $OUTPUT_DIR/2ndP_recal_data.table
+```
+**Step 15) Analyze Covariates:** Here, we use the GATK tool, AnalyzeCovariates, to generate a document called "recalibration_plots.pdf" that contains plots that show how the reported base qualities match up to the empirical qualities calculated by the BaseRecalibrator. This is a method of checking the effect of the base recalibration process that will be applied to the sequence data.  For details see "Base Quality Score Recalibration (BQSR)" at
+https://software.broadinstitute.org/gatk/documentation/article?id=11081
+
+Takes as input a genome reference file, the before recal_data.table and the after post-recal_data.table.
+```
+ALIGNMENT_RUN=<Sample ID>
+REF=<path to directory containing the hg38 genome files downloaded in Step 1>"/Homo_sapiens_assembly38.fasta"
+OUTPUT_DIR=<path to output directory>"/"$ALIGNMENT_RUN
+
+gatk --java-options "-Xmx4g" AnalyzeCovariates \
+    -before $OUTPUT_DIR/recal_data.table \
+    -after $OUTPUT_DIR/2ndP_recal_data.table \
+    -plots $OUTPUT_DIR/recalibration_plots.pdf
+```
