@@ -232,7 +232,7 @@ INPUT_FILE=<path to directory containing the .vcf file downloaded in Step 11>"/d
 
 gatk --java-options "-Xmx4g" IndexFeatureFile -F $INPUT_FILE
 ```
-**Step 11) Base Quality Score Recalibration:** The GATK tool, "BaseRecalibrator" is used to take a .bam file, the GATK reference for hg38 as well as a file containing the known sites of variation in hg38 according to dbsnp (downloaded from GATK site).  It produces a recal_data.table as the output which consists of several tables:
+**Step 13) Base Quality Score Recalibration:** The GATK tool, "BaseRecalibrator" is used to take a .bam file, the GATK reference for hg38 as well as a file containing the known sites of variation in hg38 according to dbsnp (downloaded from GATK site).  It produces a recal_data.table as the output which consists of several tables:
 - The list of arguments
 - The quantized qualities talbe
 - The recalibration table by read group
