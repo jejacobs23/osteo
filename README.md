@@ -306,3 +306,42 @@ gatk CreateSomaticPanelOfNormals \
     -vcfs $INPUT_DIRECTORY/<sample n>/pre-PON.vcf.gz \
     -O $OUTPUT_DIRECTORY/pon.vcf.gz
 ```
+**Step 18) Call somatic variants in the tumor samples:** The GATK tool, Mutect2, is used to call somatic variants in a tumor sample relative to a matched normal sample.  It also uses a population germline variant resource and can potentially utilize a panel of normals (PoN).
+
+This produces a raw unfiltered callset of variants (.vcf.gz file) and a reassembled reads BAM (.bam file).  The "-tumor" and "-normal" entries are the sample's read group sample name (the SM field value).
+
+The germline resource must contain allele-specific frequencies (i.e. must contain the AF annotation in the INFO field).  The tool annotates variant allele frequencies with the population allele frequencies. When using a population germline resource, consider adjusting the "--af-of-alleles-not-in-resource" paramter from its default of 0.001.  The gnomAD resource represents ~200K exomes and ~16K genomes.  If working with whole genome data --as we are -- we should adjust the value to 1/(2*genome samples) or 0.00003125. However, with the updated version (4.1.2.0), apparently this is no longer needed (per @davidben from Broad).
+
+For our somatic analysis that uses alt-aware and post-alt processed alignments to GRCh38, we disable a specific read filter with "--disable-read-filter MateOnSameContigOrNoMappedMateReadFilter".  This filter removes from analysis paired reads whose mate maps to a different contig.  Because of the way BWA crisscrosses mate information for mates that align better to alternate contigs, we want to include these types of reads in our analysis.  Otherwise, we may miss out on detecting SNVs and indels associated with alternate haplotypes.  Again (per @davidben), this is no longer needed with gatk-4.1.2.0 as this is now the default.
+
+We run Mutect2 with the "--f1r2-tar-gz" argument.  This creates an output with raw data used to learn the orientation bias model.  This is used later when filtering. See https://software.broadinstitute.org/gatk/documentation/article?id=24057
+
+The bamout alignments contain the artificial haplotypes and reassembled alignments for the normal and tumor and enable manual review of calls.
+```
+BASE_ALIGNMENT="01107"
+PON=$COMMON_DIR"/data/osteo/pon.vcf.gz"
+TUMOR_ALIGNMENT_RUN="SJOS0"$BASE_ALIGNMENT"_M2"
+NORMAL_ALIGNMENT_RUN="SJOS0"$BASE_ALIGNMENT"_G1"
+REF=$COMMON_DIR"/GATK_indexes/hg38_osteo/Homo_sapiens_assembly38.fasta"
+INTERVAL=$COMMON_DIR"/GATK_indexes/hg38_osteo/intervals_${SLURM_ARRAY_TASK_ID}.list"
+GERMLINE=$COMMON_DIR"/GATK_indexes/hg38_osteo/af-only-gnomad.hg38.vcf.gz"
+INPUT_TUMOR=$COMMON_DIR"/data/osteo/"$TUMOR_ALIGNMENT_RUN"/recal_reads.bam"
+INPUT_NORMAL=$COMMON_DIR"/data/osteo/"$NORMAL_ALIGNMENT_RUN"/recal_reads.bam"
+#tNAME="H_LC-SJOS0"$BASE_ALIGNMENT"-M1"
+nNAME="H_LC-SJOS0"$BASE_ALIGNMENT"-G1"
+OUTPUT_DIR=$COMMON_DIR"/data/osteo/"$TUMOR_ALIGNMENT_RUN
+OUT_VCF=$OUTPUT_DIR"/1_somatic_m2_PON_${SLURM_ARRAY_TASK_ID}.vcf.gz"
+OUT_BAM=$OUTPUT_DIR"/2_tumor_normal_m2_PON_${SLURM_ARRAY_TASK_ID}.bam"
+
+srun $GATK/gatk --java-options "-Xmx6g" Mutect2 \
+-R $REF \
+-L $INTERVAL \
+-I $INPUT_TUMOR \
+-I $INPUT_NORMAL \
+-normal $nNAME \
+--germline-resource $GERMLINE \
+--panel-of-normals $PON \
+--f1r2-tar-gz $OUTPUT_DIR/f1r2_${SLURM_ARRAY_TASK_ID}.tar.gz \
+-O $OUT_VCF \
+-bamout $OUT_BAM
+```
