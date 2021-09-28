@@ -271,3 +271,38 @@ gatk --java-options "-Xmx4g" AnalyzeCovariates \
     -after $OUTPUT_DIR/2ndP_recal_data.table \
     -plots $OUTPUT_DIR/recalibration_plots.pdf
 ```
+**Step 16) Mutect2 Tumor-Only Mode:** The GATK tool, Mutect2, is used in the tumor-only mode on each individual normal sample.  This generates a callset .vcf.gz file and a matching index.  Mutect2 calls variants in the sample with the same sensitive criteria it uses for calling mutations in the tumor in somatic mode.  Because the command omits the use of options that trigger upfront filtering, we expect all detectable variants to be called.  The calls will include low allele fraction variants and sites with multiple variant alleles, i.e. multiallelic sites.
+
+You should recapitulate any special options used in somatic calling in the panel of normals sample calling.  Here, I use the --disable-read-filter MateOnSameContigOrNoMappedMateReadFilter. This particular option is relevant for alt-aware and post-alt processed alignments.
+
+Note: this step needs to be carried out for all normal sample BEFORE any mutation calling can be done on tumor samples, as mutation calling on tumor samples will depend on the panel of normals.  
+```
+ALIGNMENT_RUN=<Sample ID>
+REF=<path to directory containing the hg38 genome files downloaded in Step 1>"/Homo_sapiens_assembly38.fasta"
+INPUT_FILE=<path to input directory>"/"$ALIGNMENT_RUN"/recal_reads.bam"
+BAM_HEADER=<bam header that matches the .bam file in "INPUT_FILE">
+OUT_FILE=<path to output directory>"/"$ALIGNMENT_RUN"/pre-PON.vcf.gz"
+
+gatk Mutect2 \
+    -R $REF \
+    -I $INPUT_FILE \
+    -tumor $BAM_HEADER \
+    --disable-read-filter MateOnSameContigOrNoMappedMateReadFilter \
+    -O $OUT_FILE
+```
+**Step 17) Create Somatic Panel of Normals:** Here we use the GATK tool, CreateSomaticPanelOfNormals, in order to create a panel of normals(PONs) containing germline and aftifactual sites for use with Mutect2.  The tool takes multiple normal sample callsets produced by Mutect2's tumor-only mode and collates sites present in two or more samples into a sites-only VCF. The PON captures common artifactual and germline variant sites.  Mutect2 then uses the PON to filter variants at the site level.
+```
+#For n normal samples
+
+INPUT_DIRECTORY=<path to input directory containing individual sample directories>
+OUTPUT_DIRECTORY=<path to output directory>
+
+gatk CreateSomaticPanelOfNormals \
+    -vcfs $INPUT_DIRECTORY/<sample 1>/pre-PON.vcf.gz \
+    -vcfs $INPUT_DIRECTORY/<sample 2>/pre-PON.vcf.gz \
+#                             .
+#                             .
+#                             .
+    -vcfs $INPUT_DIRECTORY/<sample n>/pre-PON.vcf.gz \
+    -O $OUTPUT_DIRECTORY/pon.vcf.gz
+```
