@@ -318,30 +318,124 @@ We run Mutect2 with the "--f1r2-tar-gz" argument.  This creates an output with r
 
 The bamout alignments contain the artificial haplotypes and reassembled alignments for the normal and tumor and enable manual review of calls.
 ```
-BASE_ALIGNMENT="01107"
-PON=$COMMON_DIR"/data/osteo/pon.vcf.gz"
-TUMOR_ALIGNMENT_RUN="SJOS0"$BASE_ALIGNMENT"_M2"
-NORMAL_ALIGNMENT_RUN="SJOS0"$BASE_ALIGNMENT"_G1"
-REF=$COMMON_DIR"/GATK_indexes/hg38_osteo/Homo_sapiens_assembly38.fasta"
-INTERVAL=$COMMON_DIR"/GATK_indexes/hg38_osteo/intervals_${SLURM_ARRAY_TASK_ID}.list"
-GERMLINE=$COMMON_DIR"/GATK_indexes/hg38_osteo/af-only-gnomad.hg38.vcf.gz"
-INPUT_TUMOR=$COMMON_DIR"/data/osteo/"$TUMOR_ALIGNMENT_RUN"/recal_reads.bam"
-INPUT_NORMAL=$COMMON_DIR"/data/osteo/"$NORMAL_ALIGNMENT_RUN"/recal_reads.bam"
-#tNAME="H_LC-SJOS0"$BASE_ALIGNMENT"-M1"
-nNAME="H_LC-SJOS0"$BASE_ALIGNMENT"-G1"
-OUTPUT_DIR=$COMMON_DIR"/data/osteo/"$TUMOR_ALIGNMENT_RUN
-OUT_VCF=$OUTPUT_DIR"/1_somatic_m2_PON_${SLURM_ARRAY_TASK_ID}.vcf.gz"
-OUT_BAM=$OUTPUT_DIR"/2_tumor_normal_m2_PON_${SLURM_ARRAY_TASK_ID}.bam"
+#for n intervals 
 
-srun $GATK/gatk --java-options "-Xmx6g" Mutect2 \
--R $REF \
--L $INTERVAL \
--I $INPUT_TUMOR \
--I $INPUT_NORMAL \
--normal $nNAME \
---germline-resource $GERMLINE \
---panel-of-normals $PON \
---f1r2-tar-gz $OUTPUT_DIR/f1r2_${SLURM_ARRAY_TASK_ID}.tar.gz \
--O $OUT_VCF \
--bamout $OUT_BAM
+PON=<path to PON directory>"/pon.vcf.gz"
+TUMOR_ALIGNMENT_RUN=<Tumor Sample ID>
+NORMAL_ALIGNMENT_RUN=<Normal Sample ID>
+REF=<path to directory containing the hg38 genome files downloaded in Step 1>"/Homo_sapiens_assembly38.fasta"
+INTERVAL=<path to directory containing the hg38 genome files downloaded in Step 1>"/intervals_<n>.list"
+GERMLINE=<path to directory containing the hg38 genome files downloaded in Step 1>"/af-only-gnomad.hg38.vcf.gz"
+INPUT_TUMOR=<path to input directory>"/"$TUMOR_ALIGNMENT_RUN"/recal_reads.bam"
+INPUT_NORMAL=<path to input directory>"/"$NORMAL_ALIGNMENT_RUN"/recal_reads.bam"
+nNAME=<sample's read group sample name (the SM field value)>
+OUTPUT_DIR=<path to output directory>"/"$TUMOR_ALIGNMENT_RUN
+OUT_VCF=$OUTPUT_DIR"/1_somatic_m2_PON_<n>.vcf.gz"
+OUT_BAM=$OUTPUT_DIR"/2_tumor_normal_m2_PON_<n>.bam"
+
+gatk --java-options "-Xmx6g" Mutect2 \
+    -R $REF \
+    -L $INTERVAL \
+    -I $INPUT_TUMOR \
+    -I $INPUT_NORMAL \
+    -normal $nNAME \
+    --germline-resource $GERMLINE \
+    --panel-of-normals $PON \
+    --f1r2-tar-gz $OUTPUT_DIR/f1r2_<n>.tar.gz \
+    -O $OUT_VCF \
+    -bamout $OUT_BAM
+```
+**Step 19) Combine the multiple .vcf files produced by different intervals into a single .vcf:** Picard Tools is used with the tool, MergeVcfs, in order to take the multiple .vcf.gz files produced by running Mutect2 with multiple intervals and combine them into 1 .vcf.gz file.
+```
+#for n intervals
+
+ALIGNMENT_RUN=<Sample ID>
+INPUT_DIR=<path to input directory>"/"$ALIGNMENT_RUN
+OUTPUT_DIR=<path to output directory>"/"$ALIGNMENT_RUN
+#
+VCF_1=$INPUT_DIR"/1_somatic_m2_PON_1.vcf.gz"
+VCF_2=$INPUT_DIR"/1_somatic_m2_PON_2.vcf.gz"
+#                                  .
+#                                  .
+#                                  .
+VCF_n=$INPUT_DIR"/1_somatic_m2_PON_n.vcf.gz"
+
+java -Xmx8G -jar picard.jar MergeVcfs \
+    I=$VCF_1 \
+    I=$VCF_2 \
+#          .
+#          .
+#          .
+    I=$VCF_n \
+    O=$OUTPUT_DIR/merged_variants.vcf.gz
+```
+**Step 20) Merge the Mutect2 stats file:** The GATK tool ,MergeMutectStats, is used in order to take the stats files created by the initial Mutect2 run split into intervals and combine them all into a single stats file to be used downstream with "FilterMutectCalls"
+```
+#for n intervals
+
+ALIGNMENT_RUN=<Sample ID>
+INPUT_DIR=<path to input directory>"/"$ALIGNMENT_RUN
+OUTPUT_DIR=<path to output directory>"/"$ALIGNMENT_RUN
+
+gatk MergeMutectStats \
+    -stats $INPUT_DIR/1_somatic_m2_PON_1.vcf.gz.stats \
+    -stats $INPUT_DIR/1_somatic_m2_PON_2.vcf.gz.stats \
+#                                      .
+#                                      .
+#                                      .
+    -stats $INPUT_DIR/1_somatic_m2_PON_<n>.vcf.gz.stats \
+    -O $OUTPUT_DIR/merged.stats
+```
+**Step 21) Merge the Mutect2 .bam files:** Picard Tools is used with the tool, MergeSamFiles, in order to take the multiple .bam files produced by running Mutect2 with multiple intervals and combine them into 1 .bam file.
+```
+# for n intervals
+
+ALIGNMENT_RUN=<Sample ID>
+INPUT_DIR=<path to input directory>"/"$ALIGNMENT_RUN
+OUTPUT_DIR=<path to output directory>"/"$ALIGNMENT_RUN
+
+BAM_1=$INPUT_DIR"/2_tumor_normal_m2_PON_1.bam"
+BAM_2=$INPUT_DIR"/2_tumor_normal_m2_PON_2.bam"
+#                                       .
+#                                       .
+#                                       .
+BAM_<n>=$INPUT_DIR"/2_tumor_normal_m2_PON_<n>.bam"
+
+java -Xmx8G -jar picard.jar MergeSamFiles \
+    CREATE_INDEX=true \
+    I=$BAM_1 \
+    I=$BAM_2 \
+#          .
+#          .
+#          .
+    I=$BAM_<n> \
+    O=$OUTPUT_DIR/merged_tumor_normal_m2_PON.bam
+```
+**Step 22) Learn the read orientation model:** The GATK tool, LearnReadOrientationModel, is used to take the f1r2 raw data in order to learn the orientation bias model.
+```
+#for n intervals
+
+ALIGNMENT_RUN=<Sample ID>
+INPUT_DIR=<path to input directory>"/"$ALIGNMENT_RUN
+OUTPUT_DIR=<path to output directory>"/"$ALIGNMENT_RUN
+
+gatk LearnReadOrientationModel \
+    -I $INPUT_DIR/f1r2_1.tar.gz \
+    -I $INPUT_DIR/f1r2_2.tar.gz \
+#                      .
+#                      .
+#                      .
+    -I $INPUT_DIR/f1r2_<n>.tar.gz \
+    -O $OUTPUT_DIR/read-orientation-model.tar.gz
+```
+**Step 23) :** The GATK tool ,GetPileupSummaries, is used in order to analyze the tumor .bam file.  It summarizes counts of reads that support reference, alternate andother alleles for given sites in order to be used downstread for estimation of contamination. This tool requires a population germline resource containing only common biallelic variants.  It also requires the population allele frequencies (AF) to be presentin the INFO field of the population germline resource. Note: The "-L" and "-V" don't have to be the same.  For example, you could have a variants file and or "-L" you could have a subset of intervals that you want to evaluate over.
+
+The output is a 6-column table
+```
+ALIGNMENT_RUN=<Sample ID>
+INPUT_FILE=<path to input directory>"/"$ALIGNMENT_RUN"/recal_reads.bam"
+VARIANT_FILE=$COMMON_DIR"/GATK_indexes/hg38_osteo/small_exac_common_3_biallelic_sites.vcf.gz"
+OUTPUT_DIR=<path to output directory>"/"$ALIGNMENT_RUN
+
+gatk GetPileupSummaries -I $INPUT_FILE -V $VARIANT_FILE -L $VARIANT_FILE -O $OUTPUT_DIR/tumor_getpileupsummaries.table
 ```
