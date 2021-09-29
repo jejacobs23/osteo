@@ -30,6 +30,21 @@ wget ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/Homo_sapiens_a
 ```
 - Note: The .fasta.64.alt file is used with BWA-MEM for ALT-aware alignment (Step ).  Once downloaded it was moved to the same directory the holds the BWA genome index files created in Step 2.  
 
+The following files were downloaded from the GATK resource bundle on 4/21/2019 and saved to the "hg38_osteo" directory
+- af-only-gnomad.hg38.vcf.gz
+- af-only-gnomad.hg38.vcf.gz.tbi
+- small_exac_common_3.hg38.vcf.gz
+- small_exac_common_3.hg38.vcf.gz.tbi
+```
+wget ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/Mutect2/af-only-gnomad.hg38.vcf.gz
+
+wget ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/Mutect2/af-only-gnomad.hg38.vcf.gz.tbi
+
+wget ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/Mutect2/GetPileupSummaries/small_exac_common_3.hg38.vcf.gz
+
+wget ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/Mutect2/GetPileupSummaries/small_exac_common_3.hg38.vcf.gz.tbi
+```
+
 **Step 2) Create a BWA genome index files:** The BWA "index" command is used to create the genome index files from the previously downloaded hg38 .fasta genome sequence.  These files will then be used in the upcoming alignment step.  BWA places the output files into the same foloder as the genome .fasta file was called from.  The BWA index files were then moved to a directory named "BWA_indexes/GATK_hg38" for later use.
 
 The -a bwtsw flag will specify that we want to use the indexing algorithm that is capable of handling the whole human genome.
@@ -369,7 +384,7 @@ java -Xmx8G -jar picard.jar MergeVcfs \
     I=$VCF_n \
     O=$OUTPUT_DIR/merged_variants.vcf.gz
 ```
-**Step 20) Merge the Mutect2 stats file:** The GATK tool ,MergeMutectStats, is used in order to take the stats files created by the initial Mutect2 run split into intervals and combine them all into a single stats file to be used downstream with "FilterMutectCalls"
+**Step 20) Merge the Mutect2 stats files:** The GATK tool ,MergeMutectStats, is used in order to take the stats files created by the initial Mutect2 run split into intervals and combine them all into a single stats file to be used downstream with "FilterMutectCalls"
 ```
 #for n intervals
 
@@ -428,14 +443,15 @@ gatk LearnReadOrientationModel \
     -I $INPUT_DIR/f1r2_<n>.tar.gz \
     -O $OUTPUT_DIR/read-orientation-model.tar.gz
 ```
-**Step 23) :** The GATK tool ,GetPileupSummaries, is used in order to analyze the tumor .bam file.  It summarizes counts of reads that support reference, alternate andother alleles for given sites in order to be used downstread for estimation of contamination. This tool requires a population germline resource containing only common biallelic variants.  It also requires the population allele frequencies (AF) to be presentin the INFO field of the population germline resource. Note: The "-L" and "-V" don't have to be the same.  For example, you could have a variants file and or "-L" you could have a subset of intervals that you want to evaluate over.
+**Step 23) Get pileup summaries:** The GATK tool ,GetPileupSummaries, is used in order to analyze the tumor or normal .bam file.  It summarizes counts of reads that support reference, alternate andother alleles for given sites in order to be used downstread for estimation of contamination. This tool requires a population germline resource containing only common biallelic variants.  It also requires the population allele frequencies (AF) to be presentin the INFO field of the population germline resource. Note: The "-L" and "-V" don't have to be the same.  For example, you could have a variants file and or "-L" you could have a subset of intervals that you want to evaluate over.  Separate GetPileUpSummaries runs are done for tumor and normal samples.  
 
 The output is a 6-column table
 ```
 ALIGNMENT_RUN=<Sample ID>
 INPUT_FILE=<path to input directory>"/"$ALIGNMENT_RUN"/recal_reads.bam"
-VARIANT_FILE=$COMMON_DIR"/GATK_indexes/hg38_osteo/small_exac_common_3_biallelic_sites.vcf.gz"
+VARIANT_FILE=<path to directory containing the hg38 genome files downloaded in Step 1>"/small_exac_common_3_biallelic_sites.vcf.gz"
 OUTPUT_DIR=<path to output directory>"/"$ALIGNMENT_RUN
 
-gatk GetPileupSummaries -I $INPUT_FILE -V $VARIANT_FILE -L $VARIANT_FILE -O $OUTPUT_DIR/tumor_getpileupsummaries.table
+gatk GetPileupSummaries -I $INPUT_FILE -V $VARIANT_FILE -L $VARIANT_FILE -O $OUTPUT_DIR/<tumor or normal>_getpileupsummaries.table
 ```
+**Step 24) :**
