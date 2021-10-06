@@ -7,6 +7,7 @@ Workflow for identifying single-nucleotide-variants (SNVs) in osteosarcoma Whole
 - Alignment of sequencing reads was accomplished using the Burrows-Wheeler Aligner.  The version used was bwa-0.7.17
 - GATK version 4.0.12.0 (Picard included)
 - All Python scripts were run on Python version 2.7.13 unless otherwise noted.  
+- VCFtools version 4.2
 
 # Workflow
 **Notes:**
@@ -484,7 +485,7 @@ gatk FilterMutectCalls \
     --stats $STATS_FILE \
     -O $OUTPUT_DIR/filtered.vcf.gz
 ```
-**Step 26) Filter called variants to only include those that pass all Mutect2 filters:**
+**Step 26) Filter called variants to only include those that pass all Mutect2 filters:**  Here VCFTools is used in order remove all called variants that don't have the "PASS" filter.
 ```
 all_runs=('01101_M1' '01101_M2' '01101_M3' '01101_M4' '01101_M5' '01101_M6' \
           '01101_M7' '01101_M8' '01103_D1' '01104_M1' '01105_D1' '01106_D1' \
@@ -495,20 +496,15 @@ all_runs=('01101_M1' '01101_M2' '01101_M3' '01101_M4' '01101_M5' '01101_M6' \
           '06_D' '07_D' '08_D' '09_D' '10_D' '10_M' '11_D' '11_M' '12_D' \
           '12_M' '13_D' '13_M' '14_D' '15_D' '16_D' '17_D' '18_D' '19_D')
 
-
-COM_DIR="/home/exacloud/lustre1/jjacobs"
-VCFTOOLS_DIR=$COM_DIR"/programs/vcftools/src/cpp"
-
 for i in "${all_runs[@]}"; do
     ALIGNMENT_RUN="SJOS0"$i
+    INPUT_FILE=<path to input directory>"/"$ALIGNMENT_RUN"/filtered.vcf.gz"
+    OUTPUT_DIR=<path to output directory>"/"$ALIGNMENT_RUN
 
-    INPUT_FILE=$COM_DIR"/data/osteo/"$ALIGNMENT_RUN"/filtered.vcf.gz"
-    OUTPUT_DIR=$COM_DIR"/data/osteo/"$ALIGNMENT_RUN
-
-    srun $VCFTOOLS_DIR/vcftools --gzvcf $INPUT_FILE --remove-filtered-all --recode --out $OUTPUT_DIR/filtered_PASS
+    vcftools --gzvcf $INPUT_FILE --remove-filtered-all --recode --out $OUTPUT_DIR/filtered_PASS
 done
 ```
-**Step 27) :**
+**Step 27) Compress the filtered .vcf file:** Here PicardTools is used in order to compress the .vcf file created in Step 26
 ```
 all_runs=('01101_M1' '01101_M2' '01101_M3' '01101_M4' '01101_M5' '01101_M6' \
           '01101_M7' '01101_M8' '01103_D1' '01104_M1' '01105_D1' '01106_D1' \
@@ -519,19 +515,14 @@ all_runs=('01101_M1' '01101_M2' '01101_M3' '01101_M4' '01101_M5' '01101_M6' \
           '06_D' '07_D' '08_D' '09_D' '10_D' '10_M' '11_D' '11_M' '12_D' \
           '12_M' '13_D' '13_M' '14_D' '15_D' '16_D' '17_D' '18_D' '19_D')
 
-
-COM_DIR="/home/exacloud/lustre1/jjacobs"
-PICARD_DIR=$COM_DIR"/programs/picard"
-
 for i in "${all_runs[@]}"; do
     ALIGNMENT_RUN="SJOS0"$i
-    INPUT_FILE=$COM_DIR"/data/osteo/"$ALIGNMENT_RUN"/filtered_PASS.recode.vcf"
-    OUTPUT_DIR=$COM_DIR"/data/osteo/"$ALIGNMENT_RUN
-    srun /usr/bin/java -jar $PICARD_DIR/picard.jar SortVcf I=$INPUT_FILE CREATE_INDEX=true O=$OUTPUT_DIR/filtered_PASS.vcf.gz
-    srun rm $INPUT_FILE
+    INPUT_FILE=<path to input directory>"/"$ALIGNMENT_RUN"/filtered_PASS.recode.vcf"
+    OUTPUT_DIR=<path to output directory>"/"$ALIGNMENT_RUN
+    java -jar picard.jar SortVcf I=$INPUT_FILE CREATE_INDEX=true O=$OUTPUT_DIR/filtered_PASS.vcf.gz
 done
 ```
-**Step 26) Filter variants with VEP:** The Ensemble Variant Effect Predictor (VEP) tool determines the effect of variants (SNPs, insertions, deletions, CNVs or structural variants) on genes, transcripts and protein sequence, as well as regulatory regions.
+**Step 28) Filter variants with VEP:** The Ensemble Variant Effect Predictor (VEP) tool determines the effect of variants (SNPs, insertions, deletions, CNVs or structural variants) on genes, transcripts and protein sequence, as well as regulatory regions.
 
 The "--cache" option tells VEP to used the local cache files for annotations.  The cache files are located in /home/exacloud/lustre1/jjacobs/programs/VEP/ensembl-vep/cache
 
@@ -573,3 +564,4 @@ for i in "${all_runs[@]}"; do
         -o $OUTPUT_DIR/VEP_prefiltered.txt
 done
 ```
+**Step 29) :**
