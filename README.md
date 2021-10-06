@@ -567,3 +567,5 @@ done
 **Step 29) Prepare a list of genes for input into Reactome:**  The Python program, reactome_input_by_VEP-consequences.py, is used to take the output of variant filtering and create a list of genes for input into Reactome.  Only variants with the following consequences (as defined by VEP) will be included: 3_prime_UTR_variant, splice_acceptor_variant, TF_binding_site_variant, protein_altering_variant, splice_donor_variant, stop_lost, 5_prime_UTR_variant, splice_region_variant, stop_gained, coding_sequence_variant, start_lost, frameshift_variant, regulatory_region_variant.
 
 **Step 30) Identify aberrant pathways via the Reactome API:**  The Python program, Reactome_API_by_VEP-consequences.py, is used to take the genes that have been identified as mutated by Mutect2 and are associated with the consequences listed in Step 29 and input them into Reactome via the Reactome API.  
+
+**Step 31) :** The Python program, Analyze_Reactome_Results_by_VEP-consequences, is used to compile all the "results.cvs" files from the Reactome analysis and create an output file with the Reaction ID's and how many samples had aborations associated with that particular pathway.
