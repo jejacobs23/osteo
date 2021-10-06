@@ -4,12 +4,9 @@
 #
 #P holds the pathway information in a dictionary: P[pID] = [Pnamd, aberrant, non-aberrant, p_val, FDR, Subject_List, Gene_List]
 
-CO = "0.3"
-
 def compile_pathway_data(P, COM_DIR, CO):
     import requests
     P_dict = P
-    #INFILE1 = COM_DIR + "/data/osteo/Reactome_Analyses/Pre_Filtered/Cut_Off_" + CO + "/Pathway_p-values_by_VEP-consequences.txt"
     INFILE1 = COM_DIR + "/data/osteo/Reactome_Analyses/Pre_Filtered/Pathway_p-values_by_VEP-consequences.txt"
     infile2 = COM_DIR + "/data/osteo/Reactome_Analyses/Pre_Filtered/Reactome_Pathways_by_Sample_VEP_prefiltered_condensed_by_VEP-consequences_sorted.txt"
     fi1 = open(INFILE1, 'r')
@@ -115,7 +112,6 @@ def add_subject_IDs_genes(P, L, Pathway, infile):
 def write_output(P, COM_DIR, CO, Notes):
     import os 
     #P[pID] = [Pname, aberrant, non_aberrant, p_val, FDR, Subject_List, Gene_List]
-    #OUTFILE = COM_DIR + "/data/osteo/Reactome_Analyses/Pre_Filtered/Cut_Off_" + CO + "/Significant_Pathways_by_VEP-consequences.txt"
     OUTFILE = COM_DIR + "/data/osteo/Reactome_Analyses/Pre_Filtered/Significant_Pathways_by_VEP-consequences_SeparationPathways.txt"
     fo = open(OUTFILE, 'w')
     fo.write('\t'.join(["pID", "Pathway_Name", "Aberrant", "Non-Aberrant", "p-value", "FDR", "Subject_IDs", "Genes", "Pathway_Notes"]) + '\n')
