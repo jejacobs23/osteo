@@ -1,4 +1,3 @@
-##library(survminer)
 library(survival)
 
 args = commandArgs(trailingOnly=TRUE)
@@ -21,15 +20,6 @@ print(P$Reaction_ID)
 for (i in P$Reaction_ID) {
     pID <- append(pID, i)
     S <- read.table(paste(WORKING_DIR, "/Survival_DataFrame_", i, Sname, sep = ""), header = T)
-
-##    ggsurvplot(
-##      fit = survfit(Surv(death, status) ~ group, data = S),
-##      pval = TRUE,
-##      title = pID,
-##      pval.method = TRUE,
-##      xlab = "Months",
-##      ylab = "Overall Survival Probability")
-
     print(i)
     group1 <- length(S$group[S$group == "aberrant"])
     group2 <- length(S$group[S$group == "non-aberrant"])
