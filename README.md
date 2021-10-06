@@ -573,3 +573,7 @@ done
 **Step 32) Find pathways that adequately separate samples with and without aberrations:** The Python program, Pathway_Separation_Analysis.py, is used to identify aberrant Reactome pathways the meet the requirements for number of samples with and without aberrations.  A summary file is outputed.  
 
 **Step 33) :** The Python program, Make_DFs.py, is used to take pathway IDs as an input and create data frames that R can use to produce a Kaplan-Meier curves.  This program requires survival information for the subjects being analyzed.  
+
+**Step 34) :** The R program, survdif.R, is used to compile a list of all the identified Reactome pathways how aberrations in those pathways predicts Overall Survival.  The p-values are used to calculate the false disocvery rate (FDR) in order to account for multiple hypotheses testing.
+
+**Step 35) :** The Python program, Make_sig_pathways_summary_file_by_VEP-consequences.py, is used to compile a summary file of pathways that meet the FDR threshold for significant association with Overall Survival.  
