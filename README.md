@@ -484,3 +484,92 @@ gatk FilterMutectCalls \
     --stats $STATS_FILE \
     -O $OUTPUT_DIR/filtered.vcf.gz
 ```
+**Step 26) Filter called variants to only include those that pass all Mutect2 filters:**
+```
+all_runs=('01101_M1' '01101_M2' '01101_M3' '01101_M4' '01101_M5' '01101_M6' \
+          '01101_M7' '01101_M8' '01103_D1' '01104_M1' '01105_D1' '01106_D1' \
+          '01107_M1' '01107_M2' '01108_M1' '01109_D1' '01110_D1' '01111_M1' \
+          '01112_D1' '01112_M1' '01112_M2' '01115_D1' '01117_D1' '01118_D1' \
+          '01119_D1' '01120_D1' '01123_D1' '01124_D1' '01125_D1' '01126_D1' \
+          '01127_D1' '01128_D1' '01131_D1' '01_M' '02_D' '03_D' '04_D' '05_D' \
+          '06_D' '07_D' '08_D' '09_D' '10_D' '10_M' '11_D' '11_M' '12_D' \
+          '12_M' '13_D' '13_M' '14_D' '15_D' '16_D' '17_D' '18_D' '19_D')
+
+
+COM_DIR="/home/exacloud/lustre1/jjacobs"
+VCFTOOLS_DIR=$COM_DIR"/programs/vcftools/src/cpp"
+
+for i in "${all_runs[@]}"; do
+    ALIGNMENT_RUN="SJOS0"$i
+
+    INPUT_FILE=$COM_DIR"/data/osteo/"$ALIGNMENT_RUN"/filtered.vcf.gz"
+    OUTPUT_DIR=$COM_DIR"/data/osteo/"$ALIGNMENT_RUN
+
+    srun $VCFTOOLS_DIR/vcftools --gzvcf $INPUT_FILE --remove-filtered-all --recode --out $OUTPUT_DIR/filtered_PASS
+done
+```
+**Step 27) :**
+```
+all_runs=('01101_M1' '01101_M2' '01101_M3' '01101_M4' '01101_M5' '01101_M6' \
+          '01101_M7' '01101_M8' '01103_D1' '01104_M1' '01105_D1' '01106_D1' \
+          '01107_M1' '01107_M2' '01108_M1' '01109_D1' '01110_D1' '01111_M1' \
+          '01112_D1' '01112_M1' '01112_M2' '01115_D1' '01117_D1' '01118_D1' \
+          '01119_D1' '01120_D1' '01123_D1' '01124_D1' '01125_D1' '01126_D1' \
+          '01127_D1' '01128_D1' '01131_D1' '01_M' '02_D' '03_D' '04_D' '05_D' \
+          '06_D' '07_D' '08_D' '09_D' '10_D' '10_M' '11_D' '11_M' '12_D' \
+          '12_M' '13_D' '13_M' '14_D' '15_D' '16_D' '17_D' '18_D' '19_D')
+
+
+COM_DIR="/home/exacloud/lustre1/jjacobs"
+PICARD_DIR=$COM_DIR"/programs/picard"
+
+for i in "${all_runs[@]}"; do
+    ALIGNMENT_RUN="SJOS0"$i
+    INPUT_FILE=$COM_DIR"/data/osteo/"$ALIGNMENT_RUN"/filtered_PASS.recode.vcf"
+    OUTPUT_DIR=$COM_DIR"/data/osteo/"$ALIGNMENT_RUN
+    srun /usr/bin/java -jar $PICARD_DIR/picard.jar SortVcf I=$INPUT_FILE CREATE_INDEX=true O=$OUTPUT_DIR/filtered_PASS.vcf.gz
+    srun rm $INPUT_FILE
+done
+```
+**Step 26) Filter variants with VEP:** The Ensemble Variant Effect Predictor (VEP) tool determines the effect of variants (SNPs, insertions, deletions, CNVs or structural variants) on genes, transcripts and protein sequence, as well as regulatory regions.
+
+The "--cache" option tells VEP to used the local cache files for annotations.  The cache files are located in /home/exacloud/lustre1/jjacobs/programs/VEP/ensembl-vep/cache
+
+The "--CACHEDIR" option is needed to tell VEP where the cache files are located.
+
+The "--force_overwrite" option tells VEP to write over files in the output directory that have the same name as the new output file.
+
+The "--sift b" option tells VEP to output the SIFT predicitons and the scores for the inputed variants.
+```
+all_runs=('01101_M1' '01101_M2' '01101_M3' '01101_M4' '01101_M5' '01101_M6' '01101_M7' '01101_M8' \
+        '01103_D1' '01104_M1' '01105_D1' '01106_D1' '01107_M1' '01107_M2' '01108_M1' '01109_D1' \
+        '01110_D1' '01111_M1' '01112_D1' '01112_M1' '01112_M2' '01115_D1' '01117_D1' '01118_D1' \
+        '01119_D1' '01120_D1' '01123_D1' '01124_D1' '01125_D1' '01126_D1' '01127_D1' '01128_D1' \
+        '01131_D1' '01_M' '02_D' '03_D' '04_D' '05_D' '06_D' '07_D' '08_D' '09_D' '10_D' '10_M' \
+        '11_D' '11_M' '12_D' '12_M' '13_D' '13_M' '14_D' '15_D' '16_D' '17_D' '18_D' '19_D')
+
+CACHE_DIR=<path to VEP directory>"/ensembl-vep/cache"
+FASTA=<path to directory containing the hg38 genome files downloaded in Step 1>"/Homo_sapiens_assembly38.fasta"
+
+for i in "${all_runs[@]}"; do
+    ALIGNMENT_RUN="SJOS0"$i
+    INPUT_FILE=<path to input directory>"/"$ALIGNMENT_RUN"/filtered_PASS.vcf.gz"
+    OUTPUT_DIR=<path to output directory>"/"$ALIGNMENT_RUN
+    vep -i $INPUT_FILE \
+        --offline \
+        --cache --dir_cache $CACHE_DIR \
+        --refseq \
+        --fasta $FASTA \
+        --force_overwrite \
+        --sift b \
+        --polyphen b \
+        --nearest symbol \
+        --variant_class \
+        --regulatory \
+        --numbers \
+        --hgvs \
+        --symbol \
+        --canonical \
+        -o $OUTPUT_DIR/VEP_prefiltered.txt
+done
+```
