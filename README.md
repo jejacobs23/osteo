@@ -564,4 +564,4 @@ for i in "${all_runs[@]}"; do
         -o $OUTPUT_DIR/VEP_prefiltered.txt
 done
 ```
-**Step 29) :**
+**Step 29) Prepare a list of genes for input into Reactome:**  The Python program, reactome_input_by_VEP-consequences.py, is used to take the output of variant filtering and create a list of genes for input into Reactome.  Only variants with the following consequences (as defined by VEP) will be included: 3_prime_UTR_variant, splice_acceptor_variant, TF_binding_site_variant, protein_altering_variant, splice_donor_variant, stop_lost, 5_prime_UTR_variant, splice_region_variant, stop_gained, coding_sequence_variant, start_lost, frameshift_variant, regulatory_region_variant.
