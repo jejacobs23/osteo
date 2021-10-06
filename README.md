@@ -568,4 +568,6 @@ done
 
 **Step 30) Identify aberrant pathways via the Reactome API:**  The Python program, Reactome_API_by_VEP-consequences.py, is used to take the genes that have been identified as mutated by Mutect2 and are associated with the consequences listed in Step 29 and input them into Reactome via the Reactome API.  
 
-**Step 31) :** The Python program, Analyze_Reactome_Results_by_VEP-consequences, is used to compile all the "results.cvs" files from the Reactome analysis and create an output file with the Reaction ID's and how many samples had aborations associated with that particular pathway.
+**Step 31) Compile Reactome results across all samples:** The Python program, Analyze_Reactome_Results_by_VEP-consequences, is used to compile all the "results.cvs" files from the Reactome analysis and create an output file with the Reaction ID's and how many samples had aborations associated with that particular pathway.
+
+**Step 32) :** The Python program, Pathway_Separation_Analysis.py, is used to identify aberrant Reactome pathways the meet the requirements for number of samples with and without aberrations.  A summary file is outputed.  
