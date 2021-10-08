@@ -1,12 +1,12 @@
 #!/usr/bin/bash
 #SBATCH --mail-type=ALL,TIME_LIMIT
-#SBATCH --mail-user=jacojam@ohsu.edu
+#SBATCH --mail-user=<email address>
 #SBATCH -A jjacobs
 #SBATCH --mem-per-cpu=8G
 #SBATCH --partition long_jobs
 #SBATCH --time=10-00:00:00
-#SBATCH --error=/home/exacloud/lustre1/jjacobs/osteo_logs/stderr.CreateSomaticPONs
-#SBATCH --output=/home/exacloud/lustre1/jjacobs/osteo_logs/stout.CreateSomaticPONs
+#SBATCH --error=<pathway to directory for workflow logs>/stderr.CreateSomaticPONs
+#SBATCH --output=<pathway to directory for workflow logs>/stout.CreateSomaticPONs
 
 #This submit script uses the GATK tool, "CreateSomaticPanelOfNormals" in order to create a panel of normals(PONs)
 #containing germline and aftifactual sites for use with Mutect2.  The tool takes multiple normal sample callsets
@@ -14,17 +14,10 @@
 #The PON captures common artifactual and germline variant sites.  Mutect2 then uses the PON to filter variants at the 
 #site level.  
 #
-#The GATK program is located in /home/exacloud/lustre1/jjacobs/programs/
-#Note, I'm using an older version of GATK because the more recent PON
-#workflow does not work correctly with my samples.  
-#
-#Here I set a common directory so I don't have type it multiple times.
-#
-COMMON_DIR="/home/exacloud/lustre1/jjacobs"
-GATK=$COMMON_DIR"/programs/gatk-4.0.12.0"
-SAMPLES=$COMMON_DIR"/data/osteo"
 
-srun $GATK/gatk CreateSomaticPanelOfNormals \
+SAMPLES=<path to input directory>
+
+srun <path to GATK directory>/gatk CreateSomaticPanelOfNormals \
 -vcfs $SAMPLES/SJOS001101_G1/pre-PON.vcf.gz \
 -vcfs $SAMPLES/SJOS001103_G1/pre-PON.vcf.gz \
 -vcfs $SAMPLES/SJOS001104_G1/pre-PON.vcf.gz \
@@ -66,5 +59,4 @@ srun $GATK/gatk CreateSomaticPanelOfNormals \
 -vcfs $SAMPLES/SJOS017_G/pre-PON.vcf.gz \
 -vcfs $SAMPLES/SJOS018_G/pre-PON.vcf.gz \
 -vcfs $SAMPLES/SJOS019_G/pre-PON.vcf.gz \
--O $COMMON_DIR/data/osteo/pon.vcf.gz
-
+-O <path to output directory>/pon.vcf.gz
