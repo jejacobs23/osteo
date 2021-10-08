@@ -3,8 +3,8 @@
 #SBATCH --mail-user=<email address>
 #SBATCH --time=1-12:00:00
 #SBATCH -a 1-5
-#SBATCH --error=<pathway to dirrectory for workflow logs>/stderr.RevertSam_N_%a
-#SBATCH --output=<pathway to dirrectory for workflow logs>/stout.RevertSam_N_%a
+#SBATCH --error=<pathway to directory for workflow logs>/stderr.RevertSam_N_%a
+#SBATCH --output=<pathway to directory for workflow logs>/stout.RevertSam_N_%a
 
 #This submit script uses the program picard and the function, RevertSam, to take an aligned .bam
 #file and remove alignment information in order to generate an unmapped BAM (uBAM).  
