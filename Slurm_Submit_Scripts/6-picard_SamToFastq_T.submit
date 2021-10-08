@@ -1,0 +1,59 @@
+#!/usr/bin/bash
+#SBATCH --mail-type=ALL,TIME_LIMIT
+#SBATCH --mail-user=jacojam@ohsu.edu
+#SBATCH --time=1-12:00:00
+#SBATCH --mem-per-cpu=8G
+#SBATCH -a 1-4
+#SBATCH --error=/home/exacloud/lustre1/jjacobs/osteo_logs/stderr.SamToFastq_T_%a
+#SBATCH --output=/home/exacloud/lustre1/jjacobs/osteo_logs/stout.SamToFastq_T_%a
+
+#This submit script uses the program picard and the function, SamToFastq, to take the uBAM files 
+#which have been modifed so that Illumina adapter sequences are marked with the XT tag and converts them
+#to fastq files for further processing.  It produces a .fastq file in which all extant meta data (read group
+#info, alignment info, flags and tags) are purged.  What remains are the read query names prefaced with the
+#@ symbol, read sequences and read base quality scores.  The meta data will be added back later
+#in the MergeBam step.  GATK actually pipes this along with the BWA alignment step and
+#the MergeBam step but I'm still working on piping with Slurm. See Tutorial 6483 for details:
+#https://software.broadinstitute.org/gatk/documentation/article?id=6483
+#
+#By setting the CLIPPING_ATTRIBUTE to "XT" and by setting the CLIPPING_ACTION to 2, the program effectively
+#removes the previously marked adapter sequences by changing their quality scores to two.  This makes it
+#so they don't contribute to downstream read alignment or alignment scoring metrics. 
+#
+#This program will produce an interleaved .fastq file (paired reads are retained and marked appropriately
+#in the same .fastq file).  This can then be fed into BWA_mem with the "-p" option.  
+#
+#The NON_PF=true option is set per the GATK tutorial.  This tells the program to retain reads marked with
+#the 0x200 flag bit that denotes reads that do not pass quality controls (reads failing platform or vendor
+#quality checks).  Not sure why they feel this is improtant.  
+#
+#The picard program is located in
+#/home/exacloud/lustre1/jjacobs/programs/picard
+#Here I set a common directory so I don't have to
+#type it multiple times.
+COMMON_DIR="/home/exacloud/lustre1/jjacobs"
+PICARD_DIR=$COMMON_DIR"/programs/picard"
+
+NLANES=4
+rns=(SJOS008_G)
+
+ALIGNMENT_RUN=${rns[$(((${SLURM_ARRAY_TASK_ID}-1)/$NLANES))]}
+#ALIGNMENT_RUN="SJOS001101_G1"
+
+INPUT=$COMMON_DIR"/data/osteo/"$ALIGNMENT_RUN"/uBAM_markedAdapters_lane_$((((${SLURM_ARRAY_TASK_ID}-1)%$NLANES)+1)).bam"
+#INPUT=$COMMON_DIR"/data/osteo/"$ALIGNMENT_RUN"/uBAM_markedAdapters_lane_${SLURM_ARRAY_TASK_ID}.bam"
+
+OUTPUT_DIR=$COMMON_DIR"/data/osteo/"$ALIGNMENT_RUN
+
+#FASTQ=$OUTPUT_DIR/lane_${SLURM_ARRAY_TASK_ID}_interleaved.fastq
+
+srun /usr/bin/java -Xmx8G -jar $PICARD_DIR/picard.jar SamToFastq \
+I=$INPUT \
+FASTQ=$OUTPUT_DIR/lane_$((((${SLURM_ARRAY_TASK_ID}-1)%$NLANES)+1))_interleaved.fastq \
+CLIPPING_ATTRIBUTE=XT \
+CLIPPING_ACTION=2 \
+INTERLEAVE=true \
+NON_PF=true \
+TMP_DIR=$COMMON_DIR/submit_scripts/osteo_Workflow/working_temp_stft_${SLURM_ARRAY_TASK_ID}
+
+#sbatch --dependency=afterok:${SLURM_JOB_ID} $COMMON_DIR/submit_scripts/osteo_Workflow/7-BWA_mem_align_T.submit
