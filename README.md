@@ -263,7 +263,18 @@ OUTPUT_DIR=<path to output directory>"/"$ALIGNMENT_RUN
 
 gatk --java-options "-Xmx4g" BaseRecalibrator -R $REF -I $INPUT_FILE --known-sites $KNOWN_SITES -O $OUTPUT_DIR/recal_data.table
 ```
-**Step 14) 2nd Pass Base Quality Score Recalibration:** The GATK tool, "BaseRecalibrator" is used to take the .bam file that was produced by the first past BQSR step and run a second pass using the GATK reference for hg38 as well as a file containing the known sites of variation in hg38 according to dbsnp (downloaded from GATK site).  It produces a second recal_data.table as the output that can be used in the "AnalyzeCovariates" step.
+**Step 14) Apply Base Quality Score Recalibration:** The GATK tool, ApplyBQSR, is used to recalibrate the base qualities of the input reads based on the recalibration table produced by the "BaseRecalibrator" tool, and outputs a recalibrated .bam file.  This is part of the first step in the BQSR process.  If the before and after tables from the "AnalyzeCovariates" step look good, the .bam file produced from this first pass will then be used in the downstream analysis.  This represents a change from the workflow in GATK3.
+```
+ALIGNMENT_RUN=<Sample ID>
+
+REF=<path to directory containing the hg38 genome files downloaded in Step 1>"/Homo_sapiens_assembly38.fasta"
+INPUT_FILE=<path to input directory>"/"$ALIGNMENT_RUN"/rg_added_aligned_MarkedDup.bam"
+RECAL_TABLE=<path to input directory>"/"$ALIGNMENT_RUN"/recal_data.table"
+OUTPUT_DIR=<path to output directory>"/"$ALIGNMENT_RUN
+
+gatk --java-options "-Xmx4g" ApplyBQSR -R $REF -I $INPUT_FILE --bqsr-recal-file $RECAL_TABLE -O $OUTPUT_DIR/recal_reads.bam
+```
+**Step 15) 2nd Pass Base Quality Score Recalibration:** The GATK tool, "BaseRecalibrator" is used to take the .bam file that was produced by the first past BQSR step and run a second pass using the GATK reference for hg38 as well as a file containing the known sites of variation in hg38 according to dbsnp (downloaded from GATK site).  It produces a second recal_data.table as the output that can be used in the "AnalyzeCovariates" step.
 ```
 ALIGNMENT_RUN=<Sample ID>
 REF=<path to directory containing the hg38 genome files downloaded in Step 1>"/Homo_sapiens_assembly38.fasta"
@@ -273,7 +284,7 @@ OUTPUT_DIR=<path to output directory>"/"$ALIGNMENT_RUN
 
 gatk --java-options "-Xmx4g" BaseRecalibrator -R $REF -I $INPUT_FILE --known-sites $KNOWN_SITES -O $OUTPUT_DIR/2ndP_recal_data.table
 ```
-**Step 15) Analyze Covariates:** Here, we use the GATK tool, AnalyzeCovariates, to generate a document called "recalibration_plots.pdf" that contains plots that show how the reported base qualities match up to the empirical qualities calculated by the BaseRecalibrator. This is a method of checking the effect of the base recalibration process that will be applied to the sequence data.  For details see "Base Quality Score Recalibration (BQSR)" at
+**Step 16) Analyze Covariates:** Here, we use the GATK tool, AnalyzeCovariates, to generate a document called "recalibration_plots.pdf" that contains plots that show how the reported base qualities match up to the empirical qualities calculated by the BaseRecalibrator. This is a method of checking the effect of the base recalibration process that will be applied to the sequence data.  For details see "Base Quality Score Recalibration (BQSR)" at
 https://software.broadinstitute.org/gatk/documentation/article?id=11081
 
 Takes as input a genome reference file, the before recal_data.table and the after post-recal_data.table.
@@ -287,7 +298,7 @@ gatk --java-options "-Xmx4g" AnalyzeCovariates \
     -after $OUTPUT_DIR/2ndP_recal_data.table \
     -plots $OUTPUT_DIR/recalibration_plots.pdf
 ```
-**Step 16) Mutect2 Tumor-Only Mode:** The GATK tool, Mutect2, is used in the tumor-only mode on each individual normal sample.  This generates a callset .vcf.gz file and a matching index.  Mutect2 calls variants in the sample with the same sensitive criteria it uses for calling mutations in the tumor in somatic mode.  Because the command omits the use of options that trigger upfront filtering, we expect all detectable variants to be called.  The calls will include low allele fraction variants and sites with multiple variant alleles, i.e. multiallelic sites.
+**Step 17) Mutect2 Tumor-Only Mode:** The GATK tool, Mutect2, is used in the tumor-only mode on each individual normal sample.  This generates a callset .vcf.gz file and a matching index.  Mutect2 calls variants in the sample with the same sensitive criteria it uses for calling mutations in the tumor in somatic mode.  Because the command omits the use of options that trigger upfront filtering, we expect all detectable variants to be called.  The calls will include low allele fraction variants and sites with multiple variant alleles, i.e. multiallelic sites.
 
 You should recapitulate any special options used in somatic calling in the panel of normals sample calling.  Here, I use the --disable-read-filter MateOnSameContigOrNoMappedMateReadFilter. This particular option is relevant for alt-aware and post-alt processed alignments.
 
@@ -306,7 +317,7 @@ gatk Mutect2 \
     --disable-read-filter MateOnSameContigOrNoMappedMateReadFilter \
     -O $OUT_FILE
 ```
-**Step 17) Create Somatic Panel of Normals:** Here we use the GATK tool, CreateSomaticPanelOfNormals, in order to create a panel of normals(PONs) containing germline and aftifactual sites for use with Mutect2.  The tool takes multiple normal sample callsets produced by Mutect2's tumor-only mode and collates sites present in two or more samples into a sites-only VCF. The PON captures common artifactual and germline variant sites.  Mutect2 then uses the PON to filter variants at the site level.
+**Step 18) Create Somatic Panel of Normals:** Here we use the GATK tool, CreateSomaticPanelOfNormals, in order to create a panel of normals(PONs) containing germline and aftifactual sites for use with Mutect2.  The tool takes multiple normal sample callsets produced by Mutect2's tumor-only mode and collates sites present in two or more samples into a sites-only VCF. The PON captures common artifactual and germline variant sites.  Mutect2 then uses the PON to filter variants at the site level.
 ```
 #For n normal samples
 
@@ -322,7 +333,7 @@ gatk CreateSomaticPanelOfNormals \
     -vcfs $INPUT_DIRECTORY/<sample n>/pre-PON.vcf.gz \
     -O $OUTPUT_DIRECTORY/pon.vcf.gz
 ```
-**Step 18) Call somatic variants in the tumor samples:** The GATK tool, Mutect2, is used to call somatic variants in a tumor sample relative to a matched normal sample.  It also uses a population germline variant resource and can potentially utilize a panel of normals (PoN).
+**Step 19) Call somatic variants in the tumor samples:** The GATK tool, Mutect2, is used to call somatic variants in a tumor sample relative to a matched normal sample.  It also uses a population germline variant resource and can potentially utilize a panel of normals (PoN).
 
 This produces a raw unfiltered callset of variants (.vcf.gz file) and a reassembled reads BAM (.bam file).  The "-tumor" and "-normal" entries are the sample's read group sample name (the SM field value).
 
@@ -361,7 +372,7 @@ gatk --java-options "-Xmx6g" Mutect2 \
     -O $OUT_VCF \
     -bamout $OUT_BAM
 ```
-**Step 19) Combine the multiple .vcf files produced by different intervals into a single .vcf:** Picard Tools is used with the tool, MergeVcfs, in order to take the multiple .vcf.gz files produced by running Mutect2 with multiple intervals and combine them into 1 .vcf.gz file.
+**Step 20) Combine the multiple .vcf files produced by different intervals into a single .vcf:** Picard Tools is used with the tool, MergeVcfs, in order to take the multiple .vcf.gz files produced by running Mutect2 with multiple intervals and combine them into 1 .vcf.gz file.
 ```
 #for n intervals
 
@@ -385,7 +396,7 @@ java -Xmx8G -jar picard.jar MergeVcfs \
     I=$VCF_n \
     O=$OUTPUT_DIR/merged_variants.vcf.gz
 ```
-**Step 20) Merge the Mutect2 stats files:** The GATK tool ,MergeMutectStats, is used in order to take the stats files created by the initial Mutect2 run split into intervals and combine them all into a single stats file to be used downstream with "FilterMutectCalls"
+**Step 21) Merge the Mutect2 stats files:** The GATK tool ,MergeMutectStats, is used in order to take the stats files created by the initial Mutect2 run split into intervals and combine them all into a single stats file to be used downstream with "FilterMutectCalls"
 ```
 #for n intervals
 
@@ -402,7 +413,7 @@ gatk MergeMutectStats \
     -stats $INPUT_DIR/1_somatic_m2_PON_<n>.vcf.gz.stats \
     -O $OUTPUT_DIR/merged.stats
 ```
-**Step 21) Merge the Mutect2 .bam files:** Picard Tools is used with the tool, MergeSamFiles, in order to take the multiple .bam files produced by running Mutect2 with multiple intervals and combine them into 1 .bam file.
+**Step 22) Merge the Mutect2 .bam files:** Picard Tools is used with the tool, MergeSamFiles, in order to take the multiple .bam files produced by running Mutect2 with multiple intervals and combine them into 1 .bam file.
 ```
 # for n intervals
 
@@ -427,7 +438,7 @@ java -Xmx8G -jar picard.jar MergeSamFiles \
     I=$BAM_<n> \
     O=$OUTPUT_DIR/merged_tumor_normal_m2_PON.bam
 ```
-**Step 22) Learn the read orientation model:** The GATK tool, LearnReadOrientationModel, is used to take the f1r2 raw data in order to learn the orientation bias model.
+**Step 23) Learn the read orientation model:** The GATK tool, LearnReadOrientationModel, is used to take the f1r2 raw data in order to learn the orientation bias model.
 ```
 #for n intervals
 
@@ -444,7 +455,7 @@ gatk LearnReadOrientationModel \
     -I $INPUT_DIR/f1r2_<n>.tar.gz \
     -O $OUTPUT_DIR/read-orientation-model.tar.gz
 ```
-**Step 23) Get pileup summaries:** The GATK tool ,GetPileupSummaries, is used in order to analyze the tumor or normal .bam file.  It summarizes counts of reads that support reference, alternate andother alleles for given sites in order to be used downstread for estimation of contamination. This tool requires a population germline resource containing only common biallelic variants.  It also requires the population allele frequencies (AF) to be presentin the INFO field of the population germline resource. Note: The "-L" and "-V" don't have to be the same.  For example, you could have a variants file and or "-L" you could have a subset of intervals that you want to evaluate over.  Separate GetPileUpSummaries runs are done for tumor and normal samples.  
+**Step 24) Get pileup summaries:** The GATK tool ,GetPileupSummaries, is used in order to analyze the tumor or normal .bam file.  It summarizes counts of reads that support reference, alternate andother alleles for given sites in order to be used downstread for estimation of contamination. This tool requires a population germline resource containing only common biallelic variants.  It also requires the population allele frequencies (AF) to be presentin the INFO field of the population germline resource. Note: The "-L" and "-V" don't have to be the same.  For example, you could have a variants file and or "-L" you could have a subset of intervals that you want to evaluate over.  Separate GetPileUpSummaries runs are done for tumor and normal samples.  
 
 The output is a 6-column table
 ```
@@ -455,7 +466,7 @@ OUTPUT_DIR=<path to output directory>"/"$ALIGNMENT_RUN
 
 gatk GetPileupSummaries -I $INPUT_FILE -V $VARIANT_FILE -L $VARIANT_FILE -O $OUTPUT_DIR/<tumor or normal>_getpileupsummaries.table
 ```
-**Step 24) Calculate contamination in tumor sample:** The GATK tool, CaluclateContamination, is used in order to calculate the fraction of reads coming from cross-sample contamination, given the results from GetPileupSummaries.  The resulting contamination table is used with FilterMutectCalls.
+**Step 25) Calculate contamination in tumor sample:** The GATK tool, CaluclateContamination, is used in order to calculate the fraction of reads coming from cross-sample contamination, given the results from GetPileupSummaries.  The resulting contamination table is used with FilterMutectCalls.
 ```
 TUMOR_ALIGNMENT_RUN=<Tumor Sample ID>
 NORMAL_ALIGNMENT_RUN=<Normal Sample ID>
@@ -465,7 +476,7 @@ OUTPUT_DIR=<path to output directory>"/"$TUMOR_ALIGNMENT_RUN
 
 gatk CalculateContamination -I $INPUT_FILE -matched $NORMAL -O $OUTPUT_DIR/tumor_calculatecontamination.table
 ```
-**Step 25) Filter Mutect mutation calls:** The GATK tool, FilterMutectCalls, is used in order to determine whether a call is a confident somatic call.  This is based on the workflow described here: https://software.broadinstitute.org/gatk/documentation/article?id=24057
+**Step 26) Filter Mutect mutation calls:** The GATK tool, FilterMutectCalls, is used in order to determine whether a call is a confident somatic call.  This is based on the workflow described here: https://software.broadinstitute.org/gatk/documentation/article?id=24057
 
 They include the "--tumor-segmentation segments.table" argument in their example. However, no explanation is given for this.  Thus, I have not included it in my analysis.
 ```
@@ -485,7 +496,7 @@ gatk FilterMutectCalls \
     --stats $STATS_FILE \
     -O $OUTPUT_DIR/filtered.vcf.gz
 ```
-**Step 26) Filter called variants to only include those that pass all Mutect2 filters:**  Here VCFTools is used in order remove all called variants that don't have the "PASS" filter.
+**Step 27) Filter called variants to only include those that pass all Mutect2 filters:**  Here VCFTools is used in order remove all called variants that don't have the "PASS" filter.
 ```
 all_runs=('01101_M1' '01101_M2' '01101_M3' '01101_M4' '01101_M5' '01101_M6' \
           '01101_M7' '01101_M8' '01103_D1' '01104_M1' '01105_D1' '01106_D1' \
@@ -504,7 +515,7 @@ for i in "${all_runs[@]}"; do
     vcftools --gzvcf $INPUT_FILE --remove-filtered-all --recode --out $OUTPUT_DIR/filtered_PASS
 done
 ```
-**Step 27) Compress the filtered .vcf file:** Here PicardTools is used in order to compress the .vcf file created in Step 26
+**Step 28) Compress the filtered .vcf file:** Here PicardTools is used in order to compress the .vcf file created in Step 26
 ```
 all_runs=('01101_M1' '01101_M2' '01101_M3' '01101_M4' '01101_M5' '01101_M6' \
           '01101_M7' '01101_M8' '01103_D1' '01104_M1' '01105_D1' '01106_D1' \
@@ -522,7 +533,7 @@ for i in "${all_runs[@]}"; do
     java -jar picard.jar SortVcf I=$INPUT_FILE CREATE_INDEX=true O=$OUTPUT_DIR/filtered_PASS.vcf.gz
 done
 ```
-**Step 28) Filter variants with VEP:** The Ensemble Variant Effect Predictor (VEP) tool determines the effect of variants (SNPs, insertions, deletions, CNVs or structural variants) on genes, transcripts and protein sequence, as well as regulatory regions.
+**Step 29) Filter variants with VEP:** The Ensemble Variant Effect Predictor (VEP) tool determines the effect of variants (SNPs, insertions, deletions, CNVs or structural variants) on genes, transcripts and protein sequence, as well as regulatory regions.
 
 The "--cache" option tells VEP to used the local cache files for annotations.  The cache files are located in /home/exacloud/lustre1/jjacobs/programs/VEP/ensembl-vep/cache
 
@@ -564,16 +575,16 @@ for i in "${all_runs[@]}"; do
         -o $OUTPUT_DIR/VEP_prefiltered.txt
 done
 ```
-**Step 29) Prepare a list of genes for input into Reactome:**  The Python program, reactome_input_by_VEP-consequences.py, is used to take the output of variant filtering and create a list of genes for input into Reactome.  Only variants with the following consequences (as defined by VEP) will be included: 3_prime_UTR_variant, splice_acceptor_variant, TF_binding_site_variant, protein_altering_variant, splice_donor_variant, stop_lost, 5_prime_UTR_variant, splice_region_variant, stop_gained, coding_sequence_variant, start_lost, frameshift_variant, regulatory_region_variant.
+**Step 30) Prepare a list of genes for input into Reactome:**  The Python program, reactome_input_by_VEP-consequences.py, is used to take the output of variant filtering and create a list of genes for input into Reactome.  Only variants with the following consequences (as defined by VEP) will be included: 3_prime_UTR_variant, splice_acceptor_variant, TF_binding_site_variant, protein_altering_variant, splice_donor_variant, stop_lost, 5_prime_UTR_variant, splice_region_variant, stop_gained, coding_sequence_variant, start_lost, frameshift_variant, regulatory_region_variant.
 
-**Step 30) Identify aberrant pathways via the Reactome API:**  The Python program, Reactome_API_by_VEP-consequences.py, is used to take the genes that have been identified as mutated by Mutect2 and are associated with the consequences listed in Step 29 and input them into Reactome via the Reactome API.  
+**Step 31) Identify aberrant pathways via the Reactome API:**  The Python program, Reactome_API_by_VEP-consequences.py, is used to take the genes that have been identified as mutated by Mutect2 and are associated with the consequences listed in Step 29 and input them into Reactome via the Reactome API.  
 
-**Step 31) Compile Reactome results across all samples:** The Python program, Analyze_Reactome_Results_by_VEP-consequences, is used to compile all the "results.cvs" files from the Reactome analysis and create an output file with the Reaction ID's and how many samples had aborations associated with that particular pathway.
+**Step 32) Compile Reactome results across all samples:** The Python program, Analyze_Reactome_Results_by_VEP-consequences, is used to compile all the "results.cvs" files from the Reactome analysis and create an output file with the Reaction ID's and how many samples had aborations associated with that particular pathway.
 
-**Step 32) Find pathways that adequately separate samples with and without aberrations:** The Python program, Pathway_Separation_Analysis.py, is used to identify aberrant Reactome pathways the meet the requirements for number of samples with and without aberrations.  A summary file is outputed.  
+**Step 33) Find pathways that adequately separate samples with and without aberrations:** The Python program, Pathway_Separation_Analysis.py, is used to identify aberrant Reactome pathways the meet the requirements for number of samples with and without aberrations.  A summary file is outputed.  
 
-**Step 33) Use time-to-event data to create a survival dataframe for each Reactome pathway ID:** The Python program, Make_DFs.py, is used to take pathway IDs as an input and create data frames that R can use to produce a Kaplan-Meier curves.  This program requires survival information for the subjects being analyzed.  
+**Step 34) Use time-to-event data to create a survival dataframe for each Reactome pathway ID:** The Python program, Make_DFs.py, is used to take pathway IDs as an input and create data frames that R can use to produce a Kaplan-Meier curves.  This program requires survival information for the subjects being analyzed.  
 
-**Step 34) Determine the level of significance of the relationship between each Reactome pathway and Overall Survival:** The R program, survdif.R, is used to compile a list of all the identified Reactome pathways and determine the level of significance each pathway has in regards to it's association with Overall Survival.  The p-values are used to calculate the false disocvery rate (FDR) in order to account for multiple hypotheses testing.
+**Step 35) Determine the level of significance of the relationship between each Reactome pathway and Overall Survival:** The R program, survdif.R, is used to compile a list of all the identified Reactome pathways and determine the level of significance each pathway has in regards to it's association with Overall Survival.  The p-values are used to calculate the false disocvery rate (FDR) in order to account for multiple hypotheses testing.
 
-**Step 35) Compile a list of Reactome pathways that are significantly associated with Overall Survival:** The Python program, Make_sig_pathways_summary_file_by_VEP-consequences.py, is used to compile a summary file of pathways that meet the FDR threshold for significant association with Overall Survival.  
+**Step 36) Compile a list of Reactome pathways that are significantly associated with Overall Survival:** The Python program, Make_sig_pathways_summary_file_by_VEP-consequences.py, is used to compile a summary file of pathways that meet the FDR threshold for significant association with Overall Survival.  
