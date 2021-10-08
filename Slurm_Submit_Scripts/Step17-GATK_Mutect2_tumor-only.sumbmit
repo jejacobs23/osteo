@@ -1,12 +1,12 @@
 #!/usr/bin/bash
 #SBATCH --mail-type=ALL,TIME_LIMIT
-#SBATCH --mail-user=jacojam@ohsu.edu
+#SBATCH --mail-user=<email address>
 #SBATCH --mem-per-cpu=8G
 #SBATCH --partition long_jobs
 #SBATCH -a 1-3
 #SBATCH --time=10-00:00:00
-#SBATCH --error=/home/exacloud/lustre1/jjacobs/osteo_logs/stderr.PON_step_one_%a
-#SBATCH --output=/home/exacloud/lustre1/jjacobs/osteo_logs/stout.PON_step_one_%a
+#SBATCH --error=<pathway to directory for workflow logs>/stderr.PON_step_one_%a
+#SBATCH --output=<pathway to directory for workflow logs>/stout.PON_step_one_%a
 
 #This submit script runs Mutect2 in tumor-only mode on each individual normal sample. This
 #generates a callset .vcf.gz file and a matching index.  Mutect2 calls variants in the 
@@ -19,27 +19,20 @@
 #sample calling.  Here, I use the --disable-read-filter MateOnSameContigOrNoMappedMateReadFilter.
 #This particular option is relevant for alt-aware and post-alt processed alignments.  
 
-#The GATK program is located in /home/exacloud/lustre1/mcweeney_lab/jacojam/programs/
-#
-#Here I set a common directory so I don't have type it multiple times.
-
 rns=(01112 01115 01117)
 #b_h=(H_LC-SJOS017-D4 H_LC-SJOS018-G H_LC-SJOS019-G)
 
-COMMON_DIR="/home/exacloud/lustre1/jjacobs"
-GATK=$COMMON_DIR"/programs/gatk-4.0.12.0"
 ALIGNMENT_RUN="SJOS0"${rns[${SLURM_ARRAY_TASK_ID}-1]}"_G1"
-REF=$COMMON_DIR"/GATK_indexes/hg38_osteo/Homo_sapiens_assembly38.fasta"
-INPUT_FILE=$COMMON_DIR"/data/osteo/"$ALIGNMENT_RUN"/recal_reads.bam"
+REF=<path to GATK index directories>"/hg38_osteo/Homo_sapiens_assembly38.fasta"
+INPUT_FILE=<path to input directory>"/"$ALIGNMENT_RUN"/recal_reads.bam"
 BAM_HEADER="H_LC-SJOS0"${rns[${SLURM_ARRAY_TASK_ID}-1]}"-G1"
 #BAM_HEADER=${b_h[${SLURM_ARRAY_TASK_ID}-1]}
-OUTPUT_DIR=$COMMON_DIR"/data/osteo/"$ALIGNMENT_RUN
+OUTPUT_DIR=<path to output directory>"/"$ALIGNMENT_RUN
 OUT_FILE=$OUTPUT_DIR"/pre-PON.vcf.gz"
 
-srun $GATK/gatk Mutect2 \
+srun <path to GATK directory>/gatk Mutect2 \
 -R $REF \
 -I $INPUT_FILE \
 -tumor $BAM_HEADER \
 --disable-read-filter MateOnSameContigOrNoMappedMateReadFilter \
 -O $OUT_FILE
-
