@@ -1,0 +1,13 @@
+#!/usr/bin/bash
+#SBATCH --mail-type=ALL,TIME_LIMIT
+#SBATCH --mail-user=<email address>
+#SBATCH --time=1-12:00:00
+#SBATCH --error=<pathway to directory for workflow logs>/stderr.IndexFeatureFile
+#SBATCH --output=<pathway to directory for workflow logs>/stout.IndexFeatureFile
+
+#This submit script will run GATK4 with the tool "IndexFeatureFile" to take a VCF file and 
+#create an index file to allow for querying features by a genomic interval.
+#
+INPUT_FILE=<path to input directory>"/dbsnp_146.hg38.vcf"
+
+srun <path to GATK directory>/gatk --java-options "-Xmx4g" IndexFeatureFile -F $INPUT_FILE
