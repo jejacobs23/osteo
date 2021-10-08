@@ -1,0 +1,27 @@
+#!/usr/bin/bash
+#SBATCH --mail-type=ALL,TIME_LIMIT
+#SBATCH --mail-user=<email address>
+#SBATCH --mem-per-cpu=8G
+#SBATCH --time=1-12:00:00
+#SBATCH -a 1-5
+#SBATCH --error=<pathway to directory for workflow logs>/stderr.2ndP_baserecalibrator_N_%a
+#SBATCH --output=<pathway to directory for workflow logs>/stout.2ndP_baserecalibrator_N_%a
+
+#This submit script will run GATK4 with the tool "BaseRecalibrator" to take a .bam file that was produced
+#by the first past BQSR step and run a second pass using the GATK reference for hg38 as well as a file 
+#containing the known sites of variation in hg38 according to dbsnp (downloaded from GATK site).  It 
+#produces a second recal_data.table as the output that can be used in the "AnalyzeCovariates" step. 
+#
+#I've requested 8Gb of memory.  The test run had a MaxVM of 8,445,712K and ReqMem of 4Gb/CPU
+#
+
+rns=(SJOS004_G SJOS005_G SJOS006_G SJOS007_G SJOS008_G)
+
+ALIGNMENT_RUN=${rns[${SLURM_ARRAY_TASK_ID}-1]}
+
+REF=<path to GATK index directories>"/hg38_osteo/Homo_sapiens_assembly38.fasta"
+INPUT_FILE=<path to input directory>"/"$ALIGNMENT_RUN"/recal_reads.bam"
+KNOWN_SITES=<path to GATK index directories>"/hg38_osteo/dbsnp_146.hg38.vcf"
+OUTPUT_DIR=<path to output directory>"/"$ALIGNMENT_RUN
+
+srun <path to GATK directory>/gatk --java-options "-Xmx4g" BaseRecalibrator -R $REF -I $INPUT_FILE --known-sites $KNOWN_SITES -O $OUTPUT_DIR/2ndP_recal_data.table
