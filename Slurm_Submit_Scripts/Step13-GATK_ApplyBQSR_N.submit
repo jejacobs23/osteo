@@ -1,0 +1,30 @@
+#!/usr/bin/bash
+#SBATCH --mail-type=ALL,TIME_LIMIT
+#SBATCH --mail-user=<email address>
+#SBATCH --mem-per-cpu=8G
+#SBATCH --time=1-12:00:00
+#SBATCH -a 1-5
+#SBATCH --error=<pathway to directory for workflow logs>/stderr.ApplyBQSR_N_%a
+#SBATCH --output=<pathway to directory for workflow logs>/stout.ApplyBQSR_N_%a
+
+#This submit script will run GATK4 with the tool "ApplyBQSR" to recalibrate the base
+#qualities of the input reads based on the recalibration table produced by the 
+#"BaseRecalibrator" tool, and outputs a recalibrated .bam file.  This is part of the
+#first step in the BQSR process.  If the before and after tables from the "AnalyzeCovariates"
+#step look good, the .bam file produced from this first pass will then be used in the 
+#downstream analysis.  This represents a change from the workflow in GATK3.  
+#
+#I've requested 8Gb of memory.  The test run had a maxVM of 8,512,016Kb and a
+#ReqMem of 4Gb/CPU.  
+#
+
+rns=(SJOS004_G SJOS005_G SJOS006_G SJOS007_G SJOS008_G)
+
+ALIGNMENT_RUN=${rns[${SLURM_ARRAY_TASK_ID}-1]}
+
+REF=<path to GATK index directories>"/hg38_osteo/Homo_sapiens_assembly38.fasta"
+INPUT_FILE=<path to input directory>"/"$ALIGNMENT_RUN"/rg_added_aligned_MarkedDup.bam"
+RECAL_TABLE=<path to input directory>"/"$ALIGNMENT_RUN"/recal_data.table"
+OUTPUT_DIR=<path to output directory>"/"$ALIGNMENT_RUN
+
+srun <path to GATK directory>/gatk --java-options "-Xmx4g" ApplyBQSR -R $REF -I $INPUT_FILE --bqsr-recal-file $RECAL_TABLE -O $OUTPUT_DIR/recal_reads.bam
