@@ -12,13 +12,5 @@
 #
 #The -a bwtsw flag will specify that we want to use the indexing algorithm that is capable of handling
 #the whole human genome.
-#
-#The BWA program is located in home/exacloud/lustre1/mcweeney_lab/jacojam/programs/bwa-0.7.17/bwa
-#
-#Here I set a common directory so I don't have to type it multiple times.  I also set the fasta_dir path
 
-common_dir="/home/exacloud/lustre1/mcweeney_lab/jacojam"
-fasta_dir=$common_dir"/GATK_indexes/hg38_osteo/"
-
-
-srun $common_dir/programs/bwa-0.7.17/bwa index -a bwtsw $fasta_dir/Homo_sapiens_assembly38.fasta
+srun <path to BWA directory>/bwa-0.7.17/bwa index -a bwtsw <path to fasta directory>/Homo_sapiens_assembly38.fasta
