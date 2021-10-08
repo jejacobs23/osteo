@@ -1,0 +1,43 @@
+#!/usr/bin/bash
+#SBATCH --mail-type=ALL,TIME_LIMIT
+#SBATCH --mail-user=jacojam@ohsu.edu
+#SBATCH --time=1-12:00:00
+#SBATCH -a 1
+#SBATCH --error=/home/exacloud/lustre1/jjacobs/osteo_logs/stderr.mergesamfiles_N_%a
+#SBATCH --output=/home/exacloud/lustre1/jjacobs/osteo_logs/stout.mergesamfiles_N_%a
+#
+#This submit script uses the program picard tools using java and will
+#use the tool "MergeSamFiles" to take the individual alignemnts from
+#each of the WGS lanes and merge them into one complete .bam file
+#It took 36,690,728Kb (MaxVMSize) to run, but I don't know if I need to request
+#a certain amount of memory to make it run faster.
+#
+#The picard program is located in
+#/home/exacloud/lustre1/mcweeney_lab/jacojam/programs/picard
+#
+#I have also included the "SORT_ORDER=coordinate" option
+#in order to ensure that the .bam file is sorted correctly
+#for downstread applications
+#
+common_dir="/home/exacloud/lustre1/jjacobs"
+picard_dir=$common_dir"/programs/picard"
+#
+rns=(SJOS008_G)
+#
+ALIGNMENT_RUN=${rns[${SLURM_ARRAY_TASK_ID}-1]}
+#ALIGNMENT_RUN="SJOS001107_G1"
+INPUT_DIR=$common_dir"/data/osteo/"$ALIGNMENT_RUN
+OUTPUT_DIR=$common_dir"/data/osteo/"$ALIGNMENT_RUN
+#
+file_1=$INPUT_DIR"/MergedBamAlignment_postalt_lane_1.bam"
+file_2=$INPUT_DIR"/MergedBamAlignment_postalt_lane_2.bam"
+file_3=$INPUT_DIR"/MergedBamAlignment_postalt_lane_3.bam"
+file_4=$INPUT_DIR"/MergedBamAlignment_postalt_lane_4.bam"
+#file_5=$INPUT_DIR"/MergedBamAlignment_postalt_lane_5.bam"
+#file_6=$INPUT_DIR"/MergedBamAlignment_postalt_lane_6.bam"
+#file_7=$INPUT_DIR"/MergedBamAlignment_postalt_lane_7.bam"
+#file_8=$INPUT_DIR"/MergedBamAlignment_postalt_lane_8.bam"
+#file_9=$INPUT_DIR"/MergedBamAlignment_postalt_lane_9.bam"
+
+srun /usr/bin/java -Xmx8G -jar $picard_dir/picard.jar MergeSamFiles I=$file_1 I=$file_2 I=$file_3 I=$file_4 SORT_ORDER=coordinate O=$OUTPUT_DIR/aligned.bam TMP_DIR=$common_dir/submit_scripts/osteo_Workflow/working_temp_msn_${SLURM_ARRAY_TASK_ID}
+
