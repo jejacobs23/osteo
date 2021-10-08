@@ -1,0 +1,66 @@
+#!/usr/bin/bash
+#SBATCH --mail-type=ALL,TIME_LIMIT
+#SBATCH --mail-user=jacojam@ohsu.edu
+#SBATCH --time=1-12:00:00
+#SBATCH -a 1-5
+#SBATCH --error=/home/exacloud/lustre1/jjacobs/osteo_logs/stderr.RevertSam_N_%a
+#SBATCH --output=/home/exacloud/lustre1/jjacobs/osteo_logs/stout.RevertSam_N_%a
+
+#This submit script uses the program picard and the function, RevertSam, to take an aligned .bam
+#file and remove alignment information in order to generate an unmapped BAM (uBAM).  
+#Details on this part of the workflow can be found in the GATK Tutorial #6484: (How to)
+#Generate an unmapped BAM from FASTQ or aligned BAM.
+#https://gatkforums.broadinstitute.org/gatk/discussion/6484#latest#top
+#It removes alignment information and any recalibrated base quality information.  It makes it 
+#possible to re-analyze the file using my pipeline.
+#
+#Standard tags cleared by default are NM, UQ, PG, MD, MQ, SA, MC and AS.  Additionally, the OQ
+#tag is removed by the default "RESTORE_ORIGINAL_QUALITIES" parameter.  Any nonstandard tags
+#should be removed.  To list all tags within a BAM, use the command:
+#samtools view input.bam | cut -f 12- | tr '\t' '\n' | cut -d ':' -f 1 | awk '{ if(!x[$1]++) { print }}'
+#You should leave the RG tag.  
+#
+#The "SANITIZE" option removes reads that cause problems for certain tools such as MarkIlluminaAdapters.
+#It removeds paired reads with missing mates, duplicate records and records with mismatches in length
+#of bases and qualities.  
+#
+#For paired read files, because each read in a pair has the same query name, they are listed consecutively.
+#We make sure to alter the previous sort order.  Coordinate sorted reads result in the aligner incorrectly 
+#estimating insert size from blocks of paired reads as they are not randomly distributed.
+#
+#I use the "OUTPUT_BY_READGROUP=true" option in order to create a separate file for each readgroup.  This is 
+#neccessary because there are two different MarkDuplicate steps (one before merging each readgroup and one after
+#merging).  This ensures that both optical and PCR duplicates are identified (see GATK tutorial 6483)
+#The "MAX_DISCARD_FRACTION" option is informational only.  It does nto affect processing.
+#The "SORT_ORDER=queryname", "RESTORE_ORIGINAL_QUALITIES=true", REMOVE_DUPLICATE_INFORMATION=true" and "REMOVE_
+#ALIGNMENT_INFORMATION=true" options are all default but I kept them in the code anyway.
+#
+#The picard program is located in
+#/home/exacloud/lustre1/mcweeney_lab/jacojam/programs/picard
+#Here I set a common directory so I don't have to
+#type it multiple times.
+COMMON_DIR="/home/exacloud/lustre1/jjacobs"
+RAW_DIR="/home/exacloud/lustre1/mcweeney_lab/jacojam/raw_sequences/stjude"
+#RAW_DIR="/home/groups/jjacobs/raw_data/stjude"
+PICARD_DIR=$COMMON_DIR"/programs/picard"
+
+fls=(SJOS004_G SJOS005_G SJOS006_G SJOS007_G SJOS008_G)
+
+ALIGNMENT_RUN=${fls[${SLURM_ARRAY_TASK_ID}-1]}
+INPUT=$RAW_DIR"/"$ALIGNMENT_RUN".grch38_NoAltAnalysisSet_bwa.bam"
+#INPUT=$COMMON_DIR"/data/osteo/"$ALIGNMENT_RUN".grch38_NoAltAnalysisSet_bwa.bam"
+OUTPUT_DIR=$COMMON_DIR"/data/osteo/"$ALIGNMENT_RUN
+
+srun /usr/bin/java -Xmx8G -jar $PICARD_DIR/picard.jar RevertSam \
+    I=$INPUT \
+    O=$OUTPUT_DIR \
+    OUTPUT_BY_READGROUP=true \
+    SANITIZE=true \
+    MAX_DISCARD_FRACTION=0.005 \
+    ATTRIBUTE_TO_CLEAR=XS \
+    ATTRIBUTE_TO_CLEAR=XA \
+    SORT_ORDER=queryname \
+    RESTORE_ORIGINAL_QUALITIES=true \
+    REMOVE_DUPLICATE_INFORMATION=true \
+    REMOVE_ALIGNMENT_INFORMATION=true \
+    TMP_DIR=$COMMON_DIR/submit_scripts/osteo_Workflow/working_temp_rsn_${SLURM_ARRAY_TASK_ID}
