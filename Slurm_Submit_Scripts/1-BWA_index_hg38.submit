@@ -1,0 +1,24 @@
+#!/usr/bin/bash
+#SBATCH --mail-type=ALL,TIME_LIMIT,ARRAY_TASKS
+#SBATCH --mail-user=<email address>
+#SBATCH --time=10:00:00
+#SBATCH --error=<pathway to dirrectory for workflow logs>/stderr.BWA_index
+#SBATCH --output=<pathway to dirrectory for workflow logs>/stout.BWA_index
+
+#This submit script uses the program BWA to create a genome index file from
+#a fasta genome sequence. It places the output files into the same folder as the genome fasta
+#file was called from. I then move the output files to the BWA_indexes folder for later use.
+#
+#
+#The -a bwtsw flag will specify that we want to use the indexing algorithm that is capable of handling
+#the whole human genome.
+#
+#The BWA program is located in home/exacloud/lustre1/mcweeney_lab/jacojam/programs/bwa-0.7.17/bwa
+#
+#Here I set a common directory so I don't have to type it multiple times.  I also set the fasta_dir path
+
+common_dir="/home/exacloud/lustre1/mcweeney_lab/jacojam"
+fasta_dir=$common_dir"/GATK_indexes/hg38_osteo/"
+
+
+srun $common_dir/programs/bwa-0.7.17/bwa index -a bwtsw $fasta_dir/Homo_sapiens_assembly38.fasta
