@@ -1,10 +1,10 @@
 #!/usr/bin/bash
 #SBATCH --mail-type=ALL,TIME_LIMIT
-#SBATCH --mail-user=jacojam@ohsu.edu
+#SBATCH --mail-user=<email address>
 #SBATCH --time=1-12:00:00
 #SBATCH -a 1-4
-#SBATCH --error=/home/exacloud/lustre1/jjacobs/osteo_logs/stderr.MergeBamAlignment_T_%a
-#SBATCH --output=/home/exacloud/lustre1/jjacobs/osteo_logs/stout.MergeBamAlignment_T_%a
+#SBATCH --error=<pathway to dirrectory for workflow logs>/stderr.MergeBamAlignment_T_%a
+#SBATCH --output=<pathway to dirrectory for workflow logs>/stout.MergeBamAlignment_T_%a
 
 #This submit script uses the program picard and the function, MergeBamAlignment, to merge defined information
 #from the unmapped BAM with that of the aligned BAM to conserve read data (original read information and base
@@ -20,7 +20,7 @@
 #MergeBamAlignment applies read group info from the uBAM and retains the program group info from the aligned BAM.
 #In restoring original sequences, the tool adjusts CIGAR strings from hard-clipped to soft-clipped.  If the 
 #alignment file is missing reads present in the unaligned file, then these are retained as unmapped records. Additionally,
-#the tool evaluates primary alignment designations according to a user-specified stragegy (e.g. for optimal mate paie 
+#the tool evaluates primary alignment designations according to a user-specified stragegy (e.g. for optimal mate pair 
 #mapping, and changes secondary alignment and mate unmapped flags based on its calculations).
 #
 #The "PRIMARY_ALIGNMENT_STRATEGY=MostDistant" option marks primary alignments based on the alignment pair with the 
@@ -37,12 +37,6 @@
 #
 #The "CLIP_ADAPTERS=false" option leaves reads unclipped.
 #
-#The picard program is located in
-#/home/exacloud/lustre1/jjacobs/programs/picard
-#Here I set a common directory so I don't have to
-#type it multiple times.
-COMMON_DIR="/home/exacloud/lustre1/jjacobs"
-PICARD_DIR=$COMMON_DIR"/programs/picard"
 
 NLANES=4
 rns=(SJOS008_G)
@@ -51,20 +45,17 @@ fls_SJOS008_G=(2880403526.bam 2880403667.bam 2880406913.bam 2880737702.bam)
 #fls_SJOS007_G=()
 
 ALIGNMENT_RUN=${rns[$(((${SLURM_ARRAY_TASK_ID}-1)/$NLANES))]}
-#ALIGNMENT_RUN="SJOS001110_G1"
 
 dmy=fls_${ALIGNMENT_RUN}[$(((${SLURM_ARRAY_TASK_ID}-1)%$NLANES))]
 
-INPUT_ALIGNED=$COMMON_DIR"/data/osteo/"$ALIGNMENT_RUN"/postalt_aligned_lane_$((((${SLURM_ARRAY_TASK_ID}-1)%$NLANES)+1)).sam"
-#INPUT_ALIGNED=$COMMON_DIR"/data/osteo/"$ALIGNMENT_RUN"/postalt_aligned_lane_${SLURM_ARRAY_TASK_ID}.sam"
+INPUT_ALIGNED=<path to input directory>"/"$ALIGNMENT_RUN"/postalt_aligned_lane_$((((${SLURM_ARRAY_TASK_ID}-1)%$NLANES)+1)).sam"
 
-INPUT_uBAM=$COMMON_DIR"/data/osteo/"$ALIGNMENT_RUN"/"${!dmy}
-#INPUT_uBAM=$COMMON_DIR"/data/osteo/"$ALIGNMENT_RUN"/${fls[${SLURM_ARRAY_TASK_ID}-1]}"
+INPUT_uBAM=<path to input directory>"/"$ALIGNMENT_RUN"/"${!dmy}
 
-OUTPUT_DIR=$COMMON_DIR"/data/osteo/"$ALIGNMENT_RUN
-FASTA_DIR=$COMMON_DIR"/GATK_indexes/hg38_osteo"
+OUTPUT_DIR=<path to output directory>"/"$ALIGNMENT_RUN
+FASTA_DIR=<path to hg38 fasta directory>
 
-srun /usr/bin/java -Xmx16G -jar $PICARD_DIR/picard.jar MergeBamAlignment \
+srun /usr/bin/java -Xmx16G -jar <path to Picard directory>/picard.jar MergeBamAlignment \
 ALIGNED_BAM=$INPUT_ALIGNED \
 UNMAPPED_BAM=$INPUT_uBAM \
 O=$OUTPUT_DIR/MergedBamAlignment_postalt_lane_$((((${SLURM_ARRAY_TASK_ID}-1)%$NLANES)+1)).bam \
@@ -77,6 +68,4 @@ INCLUDE_SECONDARY_ALIGNMENTS=true \
 MAX_INSERTIONS_OR_DELETIONS=-1 \
 PRIMARY_ALIGNMENT_STRATEGY=MostDistant \
 ATTRIBUTES_TO_RETAIN=XS \
-TMP_DIR=$COMMON_DIR/submit_scripts/osteo_Workflow/working_temp_mbat_${SLURM_ARRAY_TASK_ID}
-
-sbatch --dependency=afterok:${SLURM_JOB_ID} $COMMON_DIR/submit_scripts/osteo_Workflow/10-picard_mergesamfiles_T.submit
+TMP_DIR=<path to temp directory>/working_temp_mbat_${SLURM_ARRAY_TASK_ID}
