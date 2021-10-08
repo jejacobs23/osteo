@@ -1,0 +1,35 @@
+#!/usr/bin/bash
+#SBATCH --mail-type=ALL,TIME_LIMIT
+#SBATCH --mail-user=<email address>
+#SBATCH --nodes=1
+#SBATCH --cpus-per-task=32
+#SBATCH --mincpus=32
+#SBATCH --mem-per-cpu=8G
+#SBATCH -a 1-4
+#SBATCH --time=1-12:00:00
+#SBATCH --error=<pathway to dirrectory for workflow logs>/stderr.BWA_align_T_%a
+#SBATCH --output=<path to output directory>/SJOS008_G/aligned_lane_%a.sam
+
+#This submit script uses the program BWA and the function mem to align sequencing reads to a the hg38 human 
+#reference genome.  This one aligns sequencing reads from each lane individually.  They will later be combined 
+#into a single .sam file for each sample.  See Tutorial 6483 for details:
+#https://software.broadinstitute.org/gatk/documentation/article?id=6483
+#
+#I've requested all 32 cores on a single node so that the job can be split amongst
+#32 threads.  I've requested 8Gb/CPU in order to maxamize the memory.
+#
+#The "-M" flag tells the program to Mark shorter split hits
+#as secondary (for Picard compatibility)
+#
+#The "-t" flag tells the program how many threads to use.
+#
+#the "-p" flag tells the program that the input contains interleaved paired reads.  
+#
+#The output file is specified in "--output" above
+#
+
+fasta_dir=<path to BWA index directories>"/hg38_osteo/GATK_hg38"
+alignment_run="SJOS008_G"
+input=<path to input directory>"/"$alignment_run"/lane_"${SLURM_ARRAY_TASK_ID}"_interleaved.fastq"
+
+srun <path to BWA directory>/bwa-0.7.17/bwa mem -M -t 32 -p $fasta_dir/Homo_sapiens_assembly38.fasta $input
