@@ -1,0 +1,35 @@
+#!/usr/bin/bash
+#SBATCH --mail-type=ALL,TIME_LIMIT
+#SBATCH --mail-user=jacojam@ohsu.edu
+#SBATCH --time=1-12:00:00
+#SBATCH -a 1-5
+#SBATCH --error=/home/exacloud/lustre1/jjacobs/osteo_logs/stderr.AnalyzeCovariates_N_%a
+#SBATCH --output=/home/exacloud/lustre1/jjacobs/osteo_logs/stout.AnalyzeCovariates_N_%a
+
+#This submit script will use the GATK tool, AnalyzeCovariates to generate a document called
+#"recalibration_plots.pdf" that contains plots that show how the reported base qualities
+#match up to the empirical qualities calculated by the BaseRecalibrator. This is a method of
+#checking the effect of the base recalibration process that will be applied to the sequence
+#data.  For details see "Base Quality Score Recalibration (BQSR)" at
+#https://software.broadinstitute.org/gatk/documentation/article?id=11081
+#
+#Takes as input a genome reference file, the before recal_data.table and the after
+#post-recal_data.table.
+#
+#I have not requested a specific mem-per-cpu as the test run didn't report using any memory.
+#Slurm should allocate a single CPU per task.
+#The GATK program is located in /home/exacloud/lustre1/mcweeney_lab/jacojam/programs/GATK
+#
+#Here I set a common directory so I don't have type it multiple times.
+COMMON_DIR="/home/exacloud/lustre1/jjacobs"
+GATK=$COMMON_DIR"/programs/gatk-4.0.12.0"
+
+rns=(SJOS004_G SJOS005_G SJOS006_G SJOS007_G SJOS008_G)
+
+ALIGNMENT_RUN=${rns[${SLURM_ARRAY_TASK_ID}-1]}
+#ALIGNMENT_RUN="SJOS001101_G1"
+
+REF=$COMMON_DIR"/GATK_indexes/hg38_osteo/Homo_sapiens_assembly38.fasta"
+OUTPUT_DIR=$COMMON_DIR"/data/osteo/"$ALIGNMENT_RUN
+
+srun $GATK/gatk --java-options "-Xmx4g" AnalyzeCovariates -before $OUTPUT_DIR/recal_data.table -after $OUTPUT_DIR/2ndP_recal_data.table -plots $OUTPUT_DIR/recalibration_plots.pdf

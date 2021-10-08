@@ -1,0 +1,43 @@
+#!/usr/bin/bash
+#SBATCH --mail-type=ALL,TIME_LIMIT
+#SBATCH --mail-user=jacojam@ohsu.edu
+#SBATCH --time=1-12:00:00
+#SBATCH -a 1-5
+#SBATCH --error=/home/exacloud/lustre1/jjacobs/osteo_logs/stderr.baserecalibrator_T_%a
+#SBATCH --output=/home/exacloud/lustre1/jjacobs/osteo_logs/stout.baserecalibrator_T_%a
+
+#This submit script will run GATK4 with the tool "BaseRecalibrator" to take a .bam file, 
+#the GATK reference for hg38 as well as a file containing the known sites of variation in hg38 
+#according to dbsnp (downloaded from GATK site).  It produces a recal_data.table as the output 
+#which consists of several tables.
+#    The list of arguments
+#    The quantized qualities talbe
+#    The recalibration table by read group
+#    The recalibration talbe by quality score
+#    The recalibration table for all the optional covariates
+#I've requested 9000Mb of memory based on the AveVMSize=8445708Kb for a test run.  There was also
+#a ReqMem of 4Gb/CPU for the test run.  Not sure which I'm suposed to be using.
+#  
+#In one of their tutorials (https://gatkforums.broadinstitute.org/gatk/discussion/comment/43986#Comment_43986)
+#GATK used two different "--known-sites" files: one for SNPS and one for indels.  Maybe I should consider
+#doing this.  I'm not sure where to get the files though.
+#
+#The GATK program is located in /home/exacloud/lustre1/jjacobs/programs/
+#
+#Here I set a common directory so I don't have type it multiple times.
+COMMON_DIR="/home/exacloud/lustre1/jjacobs"
+GATK=$COMMON_DIR"/programs/gatk-4.0.12.0"
+
+rns=(SJOS004_G SJOS005_G SJOS006_G SJOS007_G SJOS008_G)
+
+ALIGNMENT_RUN=${rns[${SLURM_ARRAY_TASK_ID}-1]}
+#ALIGNMENT_RUN=""
+
+REF=$COMMON_DIR"/GATK_indexes/hg38_osteo/Homo_sapiens_assembly38.fasta"
+INPUT_FILE=$COMMON_DIR"/data/osteo/"$ALIGNMENT_RUN"/rg_added_aligned_MarkedDup.bam"
+KNOWN_SITES=$COMMON_DIR"/GATK_indexes/hg38_osteo/dbsnp_146.hg38.vcf"
+OUTPUT_DIR=$COMMON_DIR"/data/osteo/"$ALIGNMENT_RUN
+
+srun $GATK/gatk --java-options "-Xmx4g" BaseRecalibrator -R $REF -I $INPUT_FILE --known-sites $KNOWN_SITES -O $OUTPUT_DIR/recal_data.table
+
+sbatch --dependency=afterok:${SLURM_JOB_ID} $COMMON_DIR/submit_scripts/osteo_Workflow/13-GATK_ApplyBQSR_T.submit
