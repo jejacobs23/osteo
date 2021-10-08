@@ -1,11 +1,11 @@
 #!/usr/bin/bash
 #SBATCH --mail-type=ALL,TIME_LIMIT
-#SBATCH --mail-user=jacojam@ohsu.edu
+#SBATCH --mail-user=<email address>
 #SBATCH --time=1-12:00:00
 #SBATCH --mem-per-cpu=8G
 #SBATCH -a 1-4
-#SBATCH --error=/home/exacloud/lustre1/jjacobs/osteo_logs/stderr.SamToFastq_N_%a
-#SBATCH --output=/home/exacloud/lustre1/jjacobs/osteo_logs/stout.SamToFastq_N_%a
+#SBATCH --error=<pathway to dirrectory for workflow logs>/stderr.SamToFastq_N_%a
+#SBATCH --output=<pathway to dirrectory for workflow logs>/stout.SamToFastq_N_%a
 
 #This submit script uses the program picard and the function, SamToFastq, to take the uBAM files 
 #which have been modifed so that Illumina adapter sequences are marked with the XT tag and converts them
@@ -27,32 +27,21 @@
 #the 0x200 flag bit that denotes reads that do not pass quality controls (reads failing platform or vendor
 #quality checks).  Not sure why they feel this is improtant.  
 #
-#The picard program is located in
-#/home/exacloud/lustre1/mcweeney_lab/jacojam/programs/picard
-#Here I set a common directory so I don't have to
-#type it multiple times.
-COMMON_DIR="/home/exacloud/lustre1/jjacobs"
-PICARD_DIR=$COMMON_DIR"/programs/picard"
 
 NLANES=4
 rns=(SJOS008_G)
 
 ALIGNMENT_RUN=${rns[$(((${SLURM_ARRAY_TASK_ID}-1)/$NLANES))]}
-#ALIGNMENT_RUN="SJOS001101_G1"
 
-INPUT=$COMMON_DIR"/data/osteo/"$ALIGNMENT_RUN"/uBAM_markedAdapters_lane_$((((${SLURM_ARRAY_TASK_ID}-1)%$NLANES)+1)).bam"
-#INPUT=$COMMON_DIR"/data/osteo/"$ALIGNMENT_RUN"/uBAM_markedAdapters_lane_${SLURM_ARRAY_TASK_ID}.bam"
+INPUT=<path to input directory>"/"$ALIGNMENT_RUN"/uBAM_markedAdapters_lane_$((((${SLURM_ARRAY_TASK_ID}-1)%$NLANES)+1)).bam"
 
-OUTPUT_DIR=$COMMON_DIR"/data/osteo/"$ALIGNMENT_RUN
+OUTPUT_DIR=<path to output directory>"/"$ALIGNMENT_RUN
 
-#FASTQ=$OUTPUT_DIR/lane_${SLURM_ARRAY_TASK_ID}_interleaved.fastq
-
-srun /usr/bin/java -Xmx8G -jar $PICARD_DIR/picard.jar SamToFastq \
+srun /usr/bin/java -Xmx8G -jar <path to Picard directory>/picard.jar SamToFastq \
 I=$INPUT \
 FASTQ=$OUTPUT_DIR/lane_$((((${SLURM_ARRAY_TASK_ID}-1)%$NLANES)+1))_interleaved.fastq \
 CLIPPING_ATTRIBUTE=XT \
 CLIPPING_ACTION=2 \
 INTERLEAVE=true \
 NON_PF=true \
-TMP_DIR=$COMMON_DIR/submit_scripts/osteo_Workflow/working_temp_${SLURM_ARRAY_TASK_ID}
-
+TMP_DIR=<path to temp directory>/working_temp_${SLURM_ARRAY_TASK_ID}
