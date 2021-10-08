@@ -1,0 +1,27 @@
+#!/usr/bin/bash
+#SBATCH --mail-type=ALL,TIME_LIMIT
+#SBATCH --mail-user=<email address>
+#SBATCH --time=1-12:00:00
+#SBATCH -a 1-5
+#SBATCH --error=<pathway to directory for workflow logs>/stderr.AnalyzeCovariates_N_%a
+#SBATCH --output=<pathway to directory for workflow logs>/stout.AnalyzeCovariates_N_%a
+
+#This submit script will use the GATK tool, AnalyzeCovariates to generate a document called
+#"recalibration_plots.pdf" that contains plots that show how the reported base qualities
+#match up to the empirical qualities calculated by the BaseRecalibrator. This is a method of
+#checking the effect of the base recalibration process that will be applied to the sequence
+#data.  For details see "Base Quality Score Recalibration (BQSR)" at
+#https://software.broadinstitute.org/gatk/documentation/article?id=11081
+#
+#Takes as input a genome reference file, the before recal_data.table and the after
+#post-recal_data.table.
+#
+
+rns=(SJOS004_G SJOS005_G SJOS006_G SJOS007_G SJOS008_G)
+
+ALIGNMENT_RUN=${rns[${SLURM_ARRAY_TASK_ID}-1]}
+
+REF=<path to GATK index directories>"/hg38_osteo/Homo_sapiens_assembly38.fasta"
+OUTPUT_DIR=<path to output directory>"/"$ALIGNMENT_RUN
+
+srun <path to GATK directory>/gatk --java-options "-Xmx4g" AnalyzeCovariates -before $OUTPUT_DIR/recal_data.table -after $OUTPUT_DIR/2ndP_recal_data.table -plots $OUTPUT_DIR/recalibration_plots.pdf
