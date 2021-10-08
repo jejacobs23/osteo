@@ -1,6 +1,6 @@
 #!/usr/bin/bash
 #SBATCH --mail-type=ALL,TIME_LIMIT
-#SBATCH --mail-user=jacojam@ohsu.edu
+#SBATCH --mail-user=<email address>
 #SBATCH --time=1-12:00:00
 #SBATCH -a 1
 #SBATCH --error=/home/exacloud/lustre1/jjacobs/osteo_logs/stderr.RevertSam_T_%a
