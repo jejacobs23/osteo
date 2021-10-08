@@ -4,8 +4,8 @@
 #SBATCH --time=1-12:00:00
 #SBATCH --mem-per-cpu=8G
 #SBATCH -a 1-4
-#SBATCH --error=<pathway to dirrectory for workflow logs>/stderr.SamToFastq_T_%a
-#SBATCH --output=<pathway to dirrectory for workflow logs>/stout.SamToFastq_T_%a
+#SBATCH --error=<pathway to directory for workflow logs>/stderr.SamToFastq_T_%a
+#SBATCH --output=<pathway to directory for workflow logs>/stout.SamToFastq_T_%a
 
 #This submit script uses the program picard and the function, SamToFastq, to take the uBAM files 
 #which have been modifed so that Illumina adapter sequences are marked with the XT tag and converts them
