@@ -1,10 +1,10 @@
 #!/usr/bin/bash
 #SBATCH --mail-type=ALL,TIME_LIMIT
-#SBATCH --mail-user=jacojam@ohsu.edu
+#SBATCH --mail-user=<email address>
 #SBATCH --time=1-12:00:00
 #SBATCH -a 1-4
-#SBATCH --error=/home/exacloud/lustre1/jjacobs/osteo_logs/stderr.MarkIlluminaAdapters_N_%a
-#SBATCH --output=/home/exacloud/lustre1/jjacobs/osteo_logs/stout.MarkIlluminaAdapters_N_%a
+#SBATCH --error=<pathway to dirrectory for workflow logs>/stderr.MarkIlluminaAdapters_N_%a
+#SBATCH --output=<pathway to dirrectory for workflow logs>/stout.MarkIlluminaAdapters_N_%a
 
 #This submit script uses the program picard and the function, MarkIllumiaAdapters, to take an uBAM file
 #and rewite it with new adapter-trimming tags.  Per tutorial 6483 on the GATK website:
@@ -13,12 +13,6 @@
 #"XT" tag to a read record to mark the 5' start position of the specified adapter sequence.  It also 
 #produces a metrics file.  
 #
-#The picard program is located in
-#/home/exacloud/lustre1/mcweeney_lab/jacojam/programs/picard
-#Here I set a common directory so I don't have to
-#type it multiple times.
-COMMON_DIR="/home/exacloud/lustre1/jjacobs"
-PICARD_DIR=$COMMON_DIR"/programs/picard"
 
 NLANES=4
 rns=(SJOS008_G)
@@ -27,16 +21,14 @@ fls_SJOS008_G=(2880403526.bam 2880403667.bam 2880406913.bam 2880737702.bam)
 #fls_SJOS007_G=()
 
 ALIGNMENT_RUN=${rns[$(((${SLURM_ARRAY_TASK_ID}-1)/$NLANES))]}
-#ALIGNMENT_RUN="SJOS001101_M1"
 
 dmy=fls_${ALIGNMENT_RUN}[$(((${SLURM_ARRAY_TASK_ID}-1)%$NLANES))]
 
-INPUT=$COMMON_DIR"/data/osteo/"$ALIGNMENT_RUN"/"${!dmy}
-OUTPUT_DIR=$COMMON_DIR"/data/osteo/"$ALIGNMENT_RUN
+INPUT=<path to input directory>"/"$ALIGNMENT_RUN"/"${!dmy}
+OUTPUT_DIR=<path to output directory>"/"$ALIGNMENT_RUN
 
-srun /usr/bin/java -Xmx8G -jar $PICARD_DIR/picard.jar MarkIlluminaAdapters \
+srun /usr/bin/java -Xmx8G -jar <path to Picard directory>/picard.jar MarkIlluminaAdapters \
 I=$INPUT \
 O=$OUTPUT_DIR/uBAM_markedAdapters_lane_$((((${SLURM_ARRAY_TASK_ID}-1)%$NLANES)+1)).bam \
 M=$OUTPUT_DIR/adapter_metrics_lane_$((((${SLURM_ARRAY_TASK_ID}-1)%$NLANES)+1)).txt \
-TMP_DIR=$COMMON_DIR/submit_scripts/osteo_Workflow/working_temp_${SLURM_ARRAY_TASK_ID}
-
+TMP_DIR=<path to temp directory>/working_temp_${SLURM_ARRAY_TASK_ID}
