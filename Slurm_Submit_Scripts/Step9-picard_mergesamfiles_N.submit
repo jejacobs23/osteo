@@ -3,8 +3,8 @@
 #SBATCH --mail-user=<email address>
 #SBATCH --time=1-12:00:00
 #SBATCH -a 1
-#SBATCH --error=<pathway to dirrectory for workflow logs>/stderr.mergesamfiles_N_%a
-#SBATCH --output=<pathway to dirrectory for workflow logs>/stout.mergesamfiles_N_%a
+#SBATCH --error=<pathway to directory for workflow logs>/stderr.mergesamfiles_N_%a
+#SBATCH --output=<pathway to directory for workflow logs>/stout.mergesamfiles_N_%a
 #
 #This submit script uses the program picard tools using java and will
 #use the tool "MergeSamFiles" to take the individual alignemnts from
