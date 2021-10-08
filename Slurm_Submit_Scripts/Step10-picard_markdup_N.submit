@@ -3,8 +3,8 @@
 #SBATCH --mail-user=<email address>
 #SBATCH --time=1-12:00:00
 #SBATCH -a 1-5
-#SBATCH --error=<pathway to dirrectory for workflow logs>/stderr.markdup_N_%a
-#SBATCH --output=<pathway to dirrectory for workflow logs>/stout.markdup_N_%a
+#SBATCH --error=<pathway to directory for workflow logs>/stderr.markdup_N_%a
+#SBATCH --output=<pathway to directory for workflow logs>/stout.markdup_N_%a
 
 #This submit script will run picard tools using java and will use the tool
 #"MarkDuplicates to mark any duplicate reads from a sequence alignment file
@@ -21,8 +21,8 @@ rns=(SJOS004_G SJOS005_G SJOS006_G SJOS007_G SJOS008_G)
 
 ALIGNMENT_RUN=${rns[${SLURM_ARRAY_TASK_ID}-1]}
 
-INPUT_FILE=<path to input file>"/"$ALIGNMENT_RUN"/aligned.bam"
-OUTPUT_DIR=<path to output file>"/"$ALIGNMENT_RUN
+INPUT_FILE=<path to input directory>"/"$ALIGNMENT_RUN"/aligned.bam"
+OUTPUT_DIR=<path to output directory>"/"$ALIGNMENT_RUN
 
 srun /usr/bin/java -Xmx8G -jar <path to Picard directory>/picard.jar MarkDuplicates \
 I=$INPUT_FILE \
