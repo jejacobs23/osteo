@@ -1,0 +1,22 @@
+#!/usr/bin/bash
+#SBATCH --mail-type=ALL,TIME_LIMIT
+#SBATCH --mail-user=<email address>
+#SBATCH --time=1-12:00:00
+#SBATCH -a 1-4
+#SBATCH --error=<pathway to dirrectory for workflow logs>/stderr.BWA_postalt_N_%a
+#SBATCH --output=<pathway to dirrectory for workflow logs>/stout.BWA_postalt_N_%a
+
+NLANES=4
+rns=(SJOS008_G)
+
+ALIGNMENT_RUN=${rns[$(((${SLURM_ARRAY_TASK_ID}-1)/$NLANES))]}
+
+k8_DIR="bwakit/bwa.kit"
+POST_ALT_DIR=<path to BWA directory>"/bwa-0.7.17/bwakit"
+ALT_INDEX=<path to BWA index directories>"/hg38_osteo/GATK_hg38/Homo_sapiens_assembly38.fasta.64.alt"
+
+ALIGNED=<path to input directory>"/"$ALIGNMENT_RUN"/aligned_lane_$((((${SLURM_ARRAY_TASK_ID}-1)%$NLANES)+1)).sam"
+
+OUTPUT_DIR=<path to output directory>"/"$ALIGNMENT_RUN
+
+srun $k8_DIR/k8 $POST_ALT_DIR/bwa-postalt.js $ALT_INDEX $ALIGNED > $OUTPUT_DIR/postalt_aligned_lane_$((((${SLURM_ARRAY_TASK_ID}-1)%$NLANES)+1)).sam
