@@ -1,0 +1,34 @@
+#!/usr/bin/bash
+#SBATCH --mail-type=ALL,TIME_LIMIT
+#SBATCH --mail-user=<email address>
+#SBATCH --time=1-12:00:00
+#SBATCH -a 1-5
+#SBATCH --error=<pathway to dirrectory for workflow logs>/stderr.markdup_N_%a
+#SBATCH --output=<pathway to dirrectory for workflow logs>/stout.markdup_N_%a
+
+#This submit script will run picard tools using java and will use the tool
+#"MarkDuplicates to mark any duplicate reads from a sequence alignment file
+#
+#Per the GATK pipeline, I've also included the CREATE_INDEX=true command
+#which will create a index for the outputed .bam file.  This is needed
+#for downstream GATK tools
+#
+#Also per the GATK pipeline, I've included the VALIDATION_STRINGENCY=SILENT
+#command.  Not sure if this is necessary.
+#
+
+rns=(SJOS004_G SJOS005_G SJOS006_G SJOS007_G SJOS008_G)
+
+ALIGNMENT_RUN=${rns[${SLURM_ARRAY_TASK_ID}-1]}
+
+INPUT_FILE=<path to input file>"/"$ALIGNMENT_RUN"/aligned.bam"
+OUTPUT_DIR=<path to output file>"/"$ALIGNMENT_RUN
+
+srun /usr/bin/java -Xmx8G -jar <path to Picard directory>/picard.jar MarkDuplicates \
+I=$INPUT_FILE \
+O=$OUTPUT_DIR/rg_added_aligned_MarkedDup.bam \
+CREATE_INDEX=true \
+TAGGING_POLICY=All \
+VALIDATION_STRINGENCY=SILENT \
+M=$OUTPUT_DIR/Markdup_metrics.txt \
+TMP_DIR=<path to temp directory>/working_temp_mdn_${SLURM_ARRAY_TASK_ID}
