@@ -3,8 +3,8 @@
 #SBATCH --mail-user=<email address>
 #SBATCH --time=1-12:00:00
 #SBATCH -a 1-4
-#SBATCH --error=<pathway to dirrectory for workflow logs>/stderr.MarkIlluminaAdapters_N_%a
-#SBATCH --output=<pathway to dirrectory for workflow logs>/stout.MarkIlluminaAdapters_N_%a
+#SBATCH --error=<pathway to directory for workflow logs>/stderr.MarkIlluminaAdapters_N_%a
+#SBATCH --output=<pathway to directory for workflow logs>/stout.MarkIlluminaAdapters_N_%a
 
 #This submit script uses the program picard and the function, MarkIllumiaAdapters, to take an uBAM file
 #and rewite it with new adapter-trimming tags.  Per tutorial 6483 on the GATK website:
