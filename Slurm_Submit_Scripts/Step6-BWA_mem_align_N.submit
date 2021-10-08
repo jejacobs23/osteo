@@ -1,19 +1,18 @@
 #!/usr/bin/bash
 #SBATCH --mail-type=ALL,TIME_LIMIT
-#SBATCH --mail-user=jacojam@ohsu.edu
+#SBATCH --mail-user=<email address>
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=32
 #SBATCH --mincpus=32
 #SBATCH --mem-per-cpu=8G
 #SBATCH -a 1-4
 #SBATCH --time=1-12:00:00
-#SBATCH --error=/home/exacloud/lustre1/jjacobs/osteo_logs/stderr.BWA_align_N_%a
-#SBATCH --output=/home/exacloud/lustre1/jjacobs/data/osteo/SJOS008_G/aligned_lane_%a.sam
+#SBATCH --error=<pathway to dirrectory for workflow logs>/stderr.BWA_align_N_%a
+#SBATCH --output=<path to output directory>/SJOS008_G/aligned_lane_%a.sam
 
 #This submit script uses the program BWA and the function mem to align sequencing reads to a the hg38 human 
 #reference genome.  This one aligns sequencing reads from each lane individually.  They will later be combined 
-#into a single .sam file for each sample.  GATK actually pipes this along with the preceeding SamToFastq step 
-#and the MergeBam step but I'm still working on piping with Slurm. See Tutorial 6483 for details:
+#into a single .sam file for each sample.  See Tutorial 6483 for details:
 #https://software.broadinstitute.org/gatk/documentation/article?id=6483
 #
 #I've requested all 32 cores on a single node so that the job can be split amongst
@@ -28,15 +27,9 @@
 #
 #The output file is specified in "--output" above
 #
-#The BWA program is located in
-#home/exacloud/lustre1/jjacobs/programs/bwa-0.7.17/bwa
 
-common_dir="/home/exacloud/lustre1/jjacobs"
-fasta_dir="/home/exacloud/lustre1/jjacobs/BWA_indexes/hg38_osteo/GATK_hg38"
+fasta_dir=<paht to BWA index directories>"/hg38_osteo/GATK_hg38"
 alignment_run="SJOS008_G"
-#input=$common_dir"/data/osteo/"$alignment_run"/lane_1_interleaved.fastq"
-input=$common_dir"/data/osteo/"$alignment_run"/lane_"${SLURM_ARRAY_TASK_ID}"_interleaved.fastq"
+input=<path to input directory>"/"$alignment_run"/lane_"${SLURM_ARRAY_TASK_ID}"_interleaved.fastq"
 
-
-srun $common_dir/programs/bwa-0.7.17/bwa mem -M -t 32 -p $fasta_dir/Homo_sapiens_assembly38.fasta $input
-
+srun <path to BWA directory>/bwa-0.7.17/bwa mem -M -t 32 -p $fasta_dir/Homo_sapiens_assembly38.fasta $input
