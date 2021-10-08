@@ -1,0 +1,44 @@
+#!/usr/bin/bash
+#SBATCH --mail-type=ALL,TIME_LIMIT
+#SBATCH --mail-user=jacojam@ohsu.edu
+#SBATCH --time=1-12:00:00
+#SBATCH -a 1-12
+#SBATCH --error=/home/exacloud/lustre1/jjacobs/osteo_logs/stderr.MarkIlluminaAdapters_T_%a
+#SBATCH --output=/home/exacloud/lustre1/jjacobs/osteo_logs/stout.MarkIlluminaAdapters_T_%a
+
+#This submit script uses the program picard and the function, MarkIllumiaAdapters, to take an uBAM file
+#and rewite it with new adapter-trimming tags.  Per tutorial 6483 on the GATK website:
+#https://software.broadinstitute.org/gatk/documentation/article?id=6483
+#This is needed so that the sequenced adapters contribute minimally to the alignments.  The tool adds an
+#"XT" tag to a read record to mark the 5' start position of the specified adapter sequence.  It also 
+#produces a metrics file.  
+#
+#The picard program is located in
+#/home/exacloud/lustre1/jjacobs/programs/picard
+#Here I set a common directory so I don't have to
+#type it multiple times.
+COMMON_DIR="/home/exacloud/lustre1/jjacobs"
+PICARD_DIR=$COMMON_DIR"/programs/picard"
+
+NLANES=
+rns=()
+fls_SJOS001110_G1=()
+fls_SJOS001112_G1=()
+fls_SJOS001115_G1=()
+fls_SJOS001117_G1=()
+
+ALIGNMENT_RUN=${rns[$(((${SLURM_ARRAY_TASK_ID}-1)/$NLANES))]}
+#ALIGNMENT_RUN="SJOS001101_M1"
+
+dmy=fls_${ALIGNMENT_RUN}[$(((${SLURM_ARRAY_TASK_ID}-1)%$NLANES))]
+
+INPUT=$COMMON_DIR"/data/osteo/"$ALIGNMENT_RUN"/"${!dmy}
+OUTPUT_DIR=$COMMON_DIR"/data/osteo/"$ALIGNMENT_RUN
+
+srun /usr/bin/java -Xmx8G -jar $PICARD_DIR/picard.jar MarkIlluminaAdapters \
+I=$INPUT \
+O=$OUTPUT_DIR/uBAM_markedAdapters_lane_$((((${SLURM_ARRAY_TASK_ID}-1)%$NLANES)+1)).bam \
+M=$OUTPUT_DIR/adapter_metrics_lane_$((((${SLURM_ARRAY_TASK_ID}-1)%$NLANES)+1)).txt \
+TMP_DIR=$COMMON_DIR/submit_scripts/osteo_Workflow/working_temp_miat_${SLURM_ARRAY_TASK_ID}
+
+sbatch --dependency=afterok:${SLURM_JOB_ID} $COMMON_DIR/submit_scripts/osteo_Workflow/6-picard_SamToFastq_T.submit
