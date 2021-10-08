@@ -7,7 +7,7 @@
 #SBATCH --mem-per-cpu=8G
 #SBATCH -a 1-4
 #SBATCH --time=1-12:00:00
-#SBATCH --error=<pathway to dirrectory for workflow logs>/stderr.BWA_align_T_%a
+#SBATCH --error=<pathway to directory for workflow logs>/stderr.BWA_align_T_%a
 #SBATCH --output=<path to output directory>/SJOS008_G/aligned_lane_%a.sam
 
 #This submit script uses the program BWA and the function mem to align sequencing reads to a the hg38 human 
