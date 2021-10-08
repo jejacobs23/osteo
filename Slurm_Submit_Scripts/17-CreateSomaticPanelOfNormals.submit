@@ -1,0 +1,70 @@
+#!/usr/bin/bash
+#SBATCH --mail-type=ALL,TIME_LIMIT
+#SBATCH --mail-user=jacojam@ohsu.edu
+#SBATCH -A jjacobs
+#SBATCH --mem-per-cpu=8G
+#SBATCH --partition long_jobs
+#SBATCH --time=10-00:00:00
+#SBATCH --error=/home/exacloud/lustre1/jjacobs/osteo_logs/stderr.CreateSomaticPONs
+#SBATCH --output=/home/exacloud/lustre1/jjacobs/osteo_logs/stout.CreateSomaticPONs
+
+#This submit script uses the GATK tool, "CreateSomaticPanelOfNormals" in order to create a panel of normals(PONs)
+#containing germline and aftifactual sites for use with Mutect2.  The tool takes multiple normal sample callsets
+#produced by Mutect2's tumor-only mode and collates sites present in two or more samples into a sites-only VCF.
+#The PON captures common artifactual and germline variant sites.  Mutect2 then uses the PON to filter variants at the 
+#site level.  
+#
+#The GATK program is located in /home/exacloud/lustre1/jjacobs/programs/
+#Note, I'm using an older version of GATK because the more recent PON
+#workflow does not work correctly with my samples.  
+#
+#Here I set a common directory so I don't have type it multiple times.
+#
+COMMON_DIR="/home/exacloud/lustre1/jjacobs"
+GATK=$COMMON_DIR"/programs/gatk-4.0.12.0"
+SAMPLES=$COMMON_DIR"/data/osteo"
+
+srun $GATK/gatk CreateSomaticPanelOfNormals \
+-vcfs $SAMPLES/SJOS001101_G1/pre-PON.vcf.gz \
+-vcfs $SAMPLES/SJOS001103_G1/pre-PON.vcf.gz \
+-vcfs $SAMPLES/SJOS001104_G1/pre-PON.vcf.gz \
+-vcfs $SAMPLES/SJOS001105_G1/pre-PON.vcf.gz \
+-vcfs $SAMPLES/SJOS001106_G1/pre-PON.vcf.gz \
+-vcfs $SAMPLES/SJOS001107_G1/pre-PON.vcf.gz \
+-vcfs $SAMPLES/SJOS001108_G1/pre-PON.vcf.gz \
+-vcfs $SAMPLES/SJOS001109_G1/pre-PON.vcf.gz \
+-vcfs $SAMPLES/SJOS001111_G1/pre-PON.vcf.gz \
+-vcfs $SAMPLES/SJOS001112_G1/pre-PON.vcf.gz \
+-vcfs $SAMPLES/SJOS001115_G1/pre-PON.vcf.gz \
+-vcfs $SAMPLES/SJOS001117_G1/pre-PON.vcf.gz \
+-vcfs $SAMPLES/SJOS001118_G1/pre-PON.vcf.gz \
+-vcfs $SAMPLES/SJOS001119_G1/pre-PON.vcf.gz \
+-vcfs $SAMPLES/SJOS001120_G1/pre-PON.vcf.gz \
+-vcfs $SAMPLES/SJOS001123_G1/pre-PON.vcf.gz \
+-vcfs $SAMPLES/SJOS001124_G1/pre-PON.vcf.gz \
+-vcfs $SAMPLES/SJOS001125_G1/pre-PON.vcf.gz \
+-vcfs $SAMPLES/SJOS001126_G1/pre-PON.vcf.gz \
+-vcfs $SAMPLES/SJOS001127_G1/pre-PON.vcf.gz \
+-vcfs $SAMPLES/SJOS001128_G1/pre-PON.vcf.gz \
+-vcfs $SAMPLES/SJOS001131_G1/pre-PON.vcf.gz \
+-vcfs $SAMPLES/SJOS001_G/pre-PON.vcf.gz \
+-vcfs $SAMPLES/SJOS002_G/pre-PON.vcf.gz \
+-vcfs $SAMPLES/SJOS003_G/pre-PON.vcf.gz \
+-vcfs $SAMPLES/SJOS004_G/pre-PON.vcf.gz \
+-vcfs $SAMPLES/SJOS005_G/pre-PON.vcf.gz \
+-vcfs $SAMPLES/SJOS006_G/pre-PON.vcf.gz \
+-vcfs $SAMPLES/SJOS007_G/pre-PON.vcf.gz \
+-vcfs $SAMPLES/SJOS008_G/pre-PON.vcf.gz \
+-vcfs $SAMPLES/SJOS009_G/pre-PON.vcf.gz \
+-vcfs $SAMPLES/SJOS010_G/pre-PON.vcf.gz \
+-vcfs $SAMPLES/SJOS011_G/pre-PON.vcf.gz \
+-vcfs $SAMPLES/SJOS012_G/pre-PON.vcf.gz \
+-vcfs $SAMPLES/SJOS013_G/pre-PON.vcf.gz \
+-vcfs $SAMPLES/SJOS014_G/pre-PON.vcf.gz \
+-vcfs $SAMPLES/SJOS015_G/pre-PON.vcf.gz \
+-vcfs $SAMPLES/SJOS016_G/pre-PON.vcf.gz \
+-vcfs $SAMPLES/SJOS017_G/pre-PON.vcf.gz \
+-vcfs $SAMPLES/SJOS018_G/pre-PON.vcf.gz \
+-vcfs $SAMPLES/SJOS019_G/pre-PON.vcf.gz \
+-O $COMMON_DIR/data/osteo/pon.vcf.gz
+
