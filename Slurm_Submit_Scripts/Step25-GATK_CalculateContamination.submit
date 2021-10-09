@@ -1,0 +1,24 @@
+#!/usr/bin/bash
+#SBATCH --mail-type=ALL,TIME_LIMIT
+#SBATCH --mail-user=<email address>
+#SBATCH -A <Slurm Username>
+#SBATCH --mem-per-cpu=8G
+#SBATCH --time=1-12:00:00
+#SBATCH --error=<pathway to directory for workflow logs>/stderr.CalculateContamination
+#SBATCH --output=<pathway to directory for workflow logs>/stout.CalculateContamination
+
+#This submit script will run GATK4 with the tool "CaluclateContamination" in order to calculate
+#the fraction of reads coming from cross-sample contamination, given the results from 
+#GetPileupSummaries.  The resulting contamination table is used with FilterMutectCalls.
+#
+
+BASE="01106"
+TUMOR_ALIGNMENT_RUN="SJOS0"$BASE"_D1"
+NORMAL_ALIGNMENT_RUN="SJOS0"$BASE"_G1"
+
+INPUT_FILE=<path to input directory>"/"$TUMOR_ALIGNMENT_RUN"/tumor_getpileupsummaries.table"
+NORMAL=<path to input directory>"/"$NORMAL_ALIGNMENT_RUN"/normal_getpileupsummaries.table"
+OUTPUT_DIR=<path to output directory>"/"$TUMOR_ALIGNMENT_RUN
+
+srun <path to GATK directory>/gatk CalculateContamination -I $INPUT_FILE -matched $NORMAL -O $OUTPUT_DIR/tumor_calculatecontamination.table
+
