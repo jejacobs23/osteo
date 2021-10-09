@@ -1,0 +1,39 @@
+#!/usr/bin/bash
+#SBATCH --mail-type=ALL,TIME_LIMIT
+#SBATCH --mail-user=jacojam@ohsu.edu
+#SBATCH -A jjacobs
+#SBATCH --mem-per-cpu=8G
+#SBATCH --time=1-12:00:00
+#SBATCH --error=/home/exacloud/lustre1/jjacobs/osteo_logs/stderr.FilterMutectCalls
+#SBATCH --output=/home/exacloud/lustre1/jjacobs/osteo_logs/stout.FilterMutectCalls
+
+#This submit script will run GATK4 with the tool "FilterMutectCalls" in order to 
+#determine whether a call is a confident somatic call.  This is based on the workflow
+#described here:
+#https://software.broadinstitute.org/gatk/documentation/article?id=24057
+#
+#They include the "--tumor-segmentation segments.table" argument in their example.  
+#However, no explanation is given for this.  Thus, I have not included it in my analysis.  
+#
+#The GATK program is located in /home/exacloud/lustre1/jjacobs/programs/
+#
+#Here I set a common directory so I don't have type it multiple times.
+COMMON_DIR="/home/exacloud/lustre1/jjacobs"
+GATK=$COMMON_DIR"/programs/gatk-4.1.2.0"
+
+ALIGNMENT_RUN="SJOS001106_D1"
+
+REF=$COMMON_DIR"/GATK_indexes/hg38_osteo/Homo_sapiens_assembly38.fasta"
+VARIANT_FILE=$COMMON_DIR"/data/osteo/"$ALIGNMENT_RUN"/merged_variants.vcf.gz"
+CONTAMINATION=$COMMON_DIR"/data/osteo/"$ALIGNMENT_RUN"/tumor_calculatecontamination.table"
+ORIENTATION=$COMMON_DIR/"data/osteo/"$ALIGNMENT_RUN"/read-orientation-model.tar.gz"
+STATS_FILE=$COMMON_DIR"/data/osteo/"$ALIGNMENT_RUN"/merged.stats"
+OUTPUT_DIR=$COMMON_DIR"/data/osteo/"$ALIGNMENT_RUN
+
+srun $GATK/gatk FilterMutectCalls -V $VARIANT_FILE \
+-R $REF \
+--contamination-table $CONTAMINATION \
+--ob-priors $ORIENTATION \
+--stats $STATS_FILE \
+-O $OUTPUT_DIR/filtered.vcf.gz
+
