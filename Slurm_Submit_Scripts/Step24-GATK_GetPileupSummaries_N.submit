@@ -1,0 +1,28 @@
+#!/usr/bin/bash
+#SBATCH --mail-type=ALL,TIME_LIMIT
+#SBATCH --mail-user=<email address>
+#SBATCH --mem-per-cpu=8G
+#SBATCH --time=1-12:00:00
+#SBATCH --error=<pathway to directory for workflow logs>/stderr.GetPileupSummaries_N
+#SBATCH --output=<pathway to directory for workflow logs>/stout.GetPileupSummaries_N
+
+#This submit script will run GATK4 with the tool "GetPileupSummaries" in order to analyze
+#the tumor .bam file.  It summarizes counts of reads that support reference, alternate and
+#other alleles for given sites in order to be used downstread for estimation of contamination.  
+#This tool requires a population germline resource containing only common biallelic variants.  It also
+#requires the population allele frequencies (AF) to be present in the INFO field of the 
+#population germline resource. Note: The "-L" and "-V" don't have to be the same.  For example,
+#you could have a variants file and or "-L" you could have a subset of intervals that you want
+#to evaluate over.  
+#
+#The output is a 6-column table
+#
+
+ALIGNMENT_RUN="SJOS001106_G1"
+
+INPUT_FILE=<path to input directory>"/"$ALIGNMENT_RUN"/recal_reads.bam"
+VARIANT_FILE=<path to GATK index directories>"/hg38_osteo/small_exac_common_3_biallelic_sites.vcf.gz"
+OUTPUT_DIR=<path to output directory>"/"$ALIGNMENT_RUN
+
+srun <path to GATK directory>/gatk GetPileupSummaries -I $INPUT_FILE -V $VARIANT_FILE -L $VARIANT_FILE -O $OUTPUT_DIR/normal_getpileupsummaries.table
+
