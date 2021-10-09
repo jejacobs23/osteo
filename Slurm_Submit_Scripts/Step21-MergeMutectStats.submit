@@ -1,28 +1,23 @@
 #!/usr/bin/bash
 #SBATCH --mail-type=ALL,TIME_LIMIT
-#SBATCH --mail-user=jacojam@ohsu.edu
-#SBATCH -A jjacobs
+#SBATCH --mail-user=<email address>
+#SBATCH -A <Slurm Username>
 #SBATCH --mem-per-cpu=8G
 #SBATCH --time=1-12:00:00
-#SBATCH --error=/home/exacloud/lustre1/jjacobs/osteo_logs/stderr.MergeMutectStats
-#SBATCH --output=/home/exacloud/lustre1/jjacobs/osteo_logs/stout.MergeMutectStats
+#SBATCH --error=<pathway to directory for workflow logs>/stderr.MergeMutectStats
+#SBATCH --output=<pathway to directory for workflow logs>/stout.MergeMutectStats
 
 #This submit script will run GATK4 with the tool "MergeMutectStats" in order to take 
 #the stats files created by the initial Mutect2 run split into intervals and combine
 #them all into a single stats file to be used downstream with "FilterMutectCalls"
 #
-#The GATK program is located in /home/exacloud/lustre1/jjacobs/programs/
-#
-#Here I set a common directory so I don't have type it multiple times.
-COMMON_DIR="/home/exacloud/lustre1/jjacobs"
-GATK=$COMMON_DIR"/programs/gatk-4.1.2.0"
 
 ALIGNMENT_RUN="SJOS001106_D1"
 
-INPUT_DIR=$COMMON_DIR"/data/osteo/"$ALIGNMENT_RUN
-OUTPUT_DIR=$COMMON_DIR"/data/osteo/"$ALIGNMENT_RUN
+INPUT_DIR=<path to input directory>"/"$ALIGNMENT_RUN
+OUTPUT_DIR=<path to output directory>"/"$ALIGNMENT_RUN
 
-srun $GATK/gatk MergeMutectStats \
+srun <path to GATK directory>/gatk MergeMutectStats \
 -stats $INPUT_DIR/1_somatic_m2_PON_1.vcf.gz.stats \
 -stats $INPUT_DIR/1_somatic_m2_PON_2.vcf.gz.stats \
 -stats $INPUT_DIR/1_somatic_m2_PON_3.vcf.gz.stats \
@@ -38,5 +33,3 @@ srun $GATK/gatk MergeMutectStats \
 -stats $INPUT_DIR/1_somatic_m2_PON_13.vcf.gz.stats \
 -stats $INPUT_DIR/1_somatic_m2_PON_14.vcf.gz.stats \
 -O $OUTPUT_DIR/merged.stats
-
-srun rm $INPUT_DIR/1_somatic_m2_PON_*
