@@ -1,0 +1,73 @@
+#!/usr/bin/bash
+#SBATCH --mail-type=ALL,TIME_LIMIT
+#SBATCH --mail-user=jacojam@ohsu.edu
+#SBATCH -A jjacobs
+#SBATCH --time=1-12:00:00
+#SBATCH --error=/home/exacloud/lustre1/jjacobs/osteo_logs/stderr.MergeSamFiles
+#SBATCH --output=/home/exacloud/lustre1/jjacobs/osteo_logs/stout.MergeSamFiles
+#
+#This submit script uses the program picard tools using java and will
+#use the tool "MergeSamFiles" in order to take the multiple .bam files
+#produced by running Mutect2 with multiple intervals and combine them
+#into 1 .bam file.
+#
+#The picard program is located in
+#/home/exacloud/lustre1/jjacobs/programs/picard
+#
+#
+common_dir="/home/exacloud/lustre1/jjacobs"
+picard_dir=$common_dir"/programs/picard"
+#
+ALIGNMENT_RUN="SJOS001106_D1"
+INPUT_DIR=$common_dir"/data/osteo/"$ALIGNMENT_RUN
+OUTPUT_DIR=$common_dir"/data/osteo/"$ALIGNMENT_RUN
+#
+#BAM_1=$INPUT_DIR"/2_tumor_normal_m2_1.bam"
+#BAM_2=$INPUT_DIR"/2_tumor_normal_m2_2.bam"
+#BAM_3=$INPUT_DIR"/2_tumor_normal_m2_3.bam"
+#BAM_4=$INPUT_DIR"/2_tumor_normal_m2_4.bam"
+#BAM_5=$INPUT_DIR"/2_tumor_normal_m2_5.bam"
+#BAM_6=$INPUT_DIR"/2_tumor_normal_m2_6.bam"
+#BAM_7=$INPUT_DIR"/2_tumor_normal_m2_7.bam"
+#BAM_8=$INPUT_DIR"/2_tumor_normal_m2_8.bam"
+#BAM_9=$INPUT_DIR"/2_tumor_normal_m2_9.bam"
+#BAM_10=$INPUT_DIR"/2_tumor_normal_m2_10.bam"
+#BAM_11=$INPUT_DIR"/2_tumor_normal_m2_11.bam"
+#BAM_12=$INPUT_DIR"/2_tumor_normal_m2_12.bam"
+#BAM_13=$INPUT_DIR"/2_tumor_normal_m2_13.bam"
+#BAM_14=$INPUT_DIR"/2_tumor_normal_m2_14.bam"
+
+BAM_1=$INPUT_DIR"/2_tumor_normal_m2_PON_1.bam"
+BAM_2=$INPUT_DIR"/2_tumor_normal_m2_PON_2.bam"
+BAM_3=$INPUT_DIR"/2_tumor_normal_m2_PON_3.bam"
+BAM_4=$INPUT_DIR"/2_tumor_normal_m2_PON_4.bam"
+BAM_5=$INPUT_DIR"/2_tumor_normal_m2_PON_5.bam"
+BAM_6=$INPUT_DIR"/2_tumor_normal_m2_PON_6.bam"
+BAM_7=$INPUT_DIR"/2_tumor_normal_m2_PON_7.bam"
+BAM_8=$INPUT_DIR"/2_tumor_normal_m2_PON_8.bam"
+BAM_9=$INPUT_DIR"/2_tumor_normal_m2_PON_9.bam"
+BAM_10=$INPUT_DIR"/2_tumor_normal_m2_PON_10.bam"
+BAM_11=$INPUT_DIR"/2_tumor_normal_m2_PON_11.bam"
+BAM_12=$INPUT_DIR"/2_tumor_normal_m2_PON_12.bam"
+BAM_13=$INPUT_DIR"/2_tumor_normal_m2_PON_13.bam"
+BAM_14=$INPUT_DIR"/2_tumor_normal_m2_PON_14.bam"
+
+srun /usr/bin/java -Xmx8G -jar $picard_dir/picard.jar MergeSamFiles \
+CREATE_INDEX=true \
+I=$BAM_1 \
+I=$BAM_2 \
+I=$BAM_3 \
+I=$BAM_4 \
+I=$BAM_5 \
+I=$BAM_6 \
+I=$BAM_7 \
+I=$BAM_8 \
+I=$BAM_9 \
+I=$BAM_10 \
+I=$BAM_11 \
+I=$BAM_12 \
+I=$BAM_13 \
+I=$BAM_14 \
+O=$OUTPUT_DIR/merged_tumor_normal_m2_PON.bam
+
+srun rm $INPUT_DIR/2_tumor_normal_m2_PON_*

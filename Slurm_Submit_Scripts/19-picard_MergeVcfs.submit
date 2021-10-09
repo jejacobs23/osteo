@@ -1,0 +1,70 @@
+#!/usr/bin/bash
+#SBATCH --mail-type=ALL,TIME_LIMIT
+#SBATCH --mail-user=jacojam@ohsu.edu
+#SBATCH -A jjacobs
+#SBATCH --time=1-12:00:00
+#SBATCH --error=/home/exacloud/lustre1/jjacobs/osteo_logs/stderr.MergeVcfs
+#SBATCH --output=/home/exacloud/lustre1/jjacobs/osteo_logs/stout.MergeVcfs
+#
+#This submit script uses the program picard tools using java and will
+#use the tool "MergeVcfs" in order to take the multiple .vcf.gz files
+#produced by running Mutect2 with multiple intervals and combine them
+#into 1 .vcf.gz file.
+#
+#The picard program is located in
+#/home/exacloud/lustre1/jjacobs/programs/picard
+#
+#
+common_dir="/home/exacloud/lustre1/jjacobs"
+picard_dir=$common_dir"/programs/picard"
+#
+ALIGNMENT_RUN="SJOS001106_D1"
+INPUT_DIR=$common_dir"/data/osteo/"$ALIGNMENT_RUN
+OUTPUT_DIR=$common_dir"/data/osteo/"$ALIGNMENT_RUN
+#
+VCF_1=$INPUT_DIR"/1_somatic_m2_PON_1.vcf.gz"
+VCF_2=$INPUT_DIR"/1_somatic_m2_PON_2.vcf.gz"
+VCF_3=$INPUT_DIR"/1_somatic_m2_PON_3.vcf.gz"
+VCF_4=$INPUT_DIR"/1_somatic_m2_PON_4.vcf.gz"
+VCF_5=$INPUT_DIR"/1_somatic_m2_PON_5.vcf.gz"
+VCF_6=$INPUT_DIR"/1_somatic_m2_PON_6.vcf.gz"
+VCF_7=$INPUT_DIR"/1_somatic_m2_PON_7.vcf.gz"
+VCF_8=$INPUT_DIR"/1_somatic_m2_PON_8.vcf.gz"
+VCF_9=$INPUT_DIR"/1_somatic_m2_PON_9.vcf.gz"
+VCF_10=$INPUT_DIR"/1_somatic_m2_PON_10.vcf.gz"
+VCF_11=$INPUT_DIR"/1_somatic_m2_PON_11.vcf.gz"
+VCF_12=$INPUT_DIR"/1_somatic_m2_PON_12.vcf.gz"
+VCF_13=$INPUT_DIR"/1_somatic_m2_PON_13.vcf.gz"
+VCF_14=$INPUT_DIR"/1_somatic_m2_PON_14.vcf.gz"
+
+#VCF_1=$INPUT_DIR"/1_somatic_m2_1.vcf.gz"
+#VCF_2=$INPUT_DIR"/1_somatic_m2_2.vcf.gz"
+#VCF_3=$INPUT_DIR"/1_somatic_m2_3.vcf.gz"
+#VCF_4=$INPUT_DIR"/1_somatic_m2_4.vcf.gz"
+#VCF_5=$INPUT_DIR"/1_somatic_m2_5.vcf.gz"
+#VCF_6=$INPUT_DIR"/1_somatic_m2_6.vcf.gz"
+#VCF_7=$INPUT_DIR"/1_somatic_m2_7.vcf.gz"
+#VCF_8=$INPUT_DIR"/1_somatic_m2_8.vcf.gz"
+#VCF_9=$INPUT_DIR"/1_somatic_m2_9.vcf.gz"
+#VCF_10=$INPUT_DIR"/1_somatic_m2_10.vcf.gz"
+#VCF_11=$INPUT_DIR"/1_somatic_m2_11.vcf.gz"
+#VCF_12=$INPUT_DIR"/1_somatic_m2_12.vcf.gz"
+#VCF_13=$INPUT_DIR"/1_somatic_m2_13.vcf.gz"
+#VCF_14=$INPUT_DIR"/1_somatic_m2_14.vcf.gz"
+
+srun /usr/bin/java -Xmx8G -jar $picard_dir/picard.jar MergeVcfs \
+I=$VCF_1 \
+I=$VCF_2 \
+I=$VCF_3 \
+I=$VCF_4 \
+I=$VCF_5 \
+I=$VCF_6 \
+I=$VCF_7 \
+I=$VCF_8 \
+I=$VCF_9 \
+I=$VCF_10 \
+I=$VCF_11 \
+I=$VCF_12 \
+I=$VCF_13 \
+I=$VCF_14 \
+O=$OUTPUT_DIR/merged_variants.vcf.gz
