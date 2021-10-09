@@ -1,0 +1,31 @@
+#!/usr/bin/bash
+#SBATCH --mail-type=ALL,TIME_LIMIT
+#SBATCH --mail-user=<email address>
+#SBATCH -A <Slurm Username>
+#SBATCH --mem-per-cpu=8G
+#SBATCH --time=1-12:00:00
+#SBATCH --error=<pathway to directory for workflow logs>/stderr.FilterMutectCalls
+#SBATCH --output=<pathway to directory for workflow logs>/stout.FilterMutectCalls
+
+#This submit script will run GATK4 with the tool "FilterMutectCalls" in order to 
+#determine whether a call is a confident somatic call.  This is based on the workflow
+#described here:
+#https://software.broadinstitute.org/gatk/documentation/article?id=24057
+#
+
+ALIGNMENT_RUN="SJOS001106_D1"
+
+REF=<path to GATK index directories>"/hg38_osteo/Homo_sapiens_assembly38.fasta"
+VARIANT_FILE=<path to input directory>"/"$ALIGNMENT_RUN"/merged_variants.vcf.gz"
+CONTAMINATION=<path to input directory>"/"$ALIGNMENT_RUN"/tumor_calculatecontamination.table"
+ORIENTATION=<path to input directory>"/"$ALIGNMENT_RUN"/read-orientation-model.tar.gz"
+STATS_FILE=<path to input directory>"/"$ALIGNMENT_RUN"/merged.stats"
+OUTPUT_DIR=<path to output directory>"/"$ALIGNMENT_RUN
+
+srun <path to GATK directory>/gatk FilterMutectCalls -V $VARIANT_FILE \
+-R $REF \
+--contamination-table $CONTAMINATION \
+--ob-priors $ORIENTATION \
+--stats $STATS_FILE \
+-O $OUTPUT_DIR/filtered.vcf.gz
+
