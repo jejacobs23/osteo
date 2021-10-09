@@ -1,10 +1,10 @@
 #!/usr/bin/bash
 #SBATCH --mail-type=ALL,TIME_LIMIT
 #SBATCH --mail-user=<email address>
-#SBATCH -A jjacobs
+#SBATCH -A <Slurm Username>
 #SBATCH --time=1-12:00:00
-#SBATCH --error=/home/exacloud/lustre1/jjacobs/osteo_logs/stderr.MergeVcfs
-#SBATCH --output=/home/exacloud/lustre1/jjacobs/osteo_logs/stout.MergeVcfs
+#SBATCH --error=<pathway to directory for workflow logs>/stderr.MergeVcfs
+#SBATCH --output=<pathway to directory for workflow logs>/stout.MergeVcfs
 #
 #This submit script uses the program picard tools using java and will
 #use the tool "MergeVcfs" in order to take the multiple .vcf.gz files
