@@ -1,0 +1,62 @@
+#!/usr/bin/bash
+#SBATCH --mail-type=ALL,TIME_LIMIT
+#SBATCH --mail-user=jacojam@ohsu.edu
+#SBATCH -A jjacobs
+#SBATCH --qos long_jobs
+#SBATCH --time=10-00:00:00
+#SBATCH --error=/home/exacloud/lustre1/jjacobs/osteo_logs/stderr.VEP_long_job
+#SBATCH --output=/home/exacloud/lustre1/jjacobs/osteo_logs/stout.VEP_long_job
+
+#The Ensemble Variant Effect Predictor (VEP) tool determines the effect of variants
+#(SNPs, insertions, deletions, CNVs or structural variants) on genes, transcripts
+#and protein sequence, as well as regulatory regions.  
+#
+#The "--cache" option tells VEP to used the local cache files for annotations.  The
+#cache files are located in /home/exacloud/lustre1/jjacobs/programs/VEP/ensembl-vep/cache
+#The "--CACHEDIR" option is needed to tell VEP where the cache files are located.
+#
+#The "--force_overwrite" option tells VEP to write over files in the output directory
+#that have the same name as the new output file.
+#
+#I want to use the "--nearest symbol" option but it requires a perl module that I can't
+#get to install correctly.  
+#  
+#The "--sift b" option tells VEP to output the SIFT predicitons and the scores for the 
+#inputed variants.  
+#
+#Originally tried to split this up into array jobs (each with several runs) but it
+#kept erroring out due to memory constraints.  
+
+all_runs=('01101_M1' '01101_M2' '01101_M3' '01101_M4' '01101_M5' '01101_M6' '01101_M7' '01101_M8' \
+        '01103_D1' '01104_M1' '01105_D1' '01106_D1' '01107_M1' '01107_M2' '01108_M1' '01109_D1' \
+        '01110_D1' '01111_M1' '01112_D1' '01112_M1' '01112_M2' '01115_D1' '01117_D1' '01118_D1' \
+        '01119_D1' '01120_D1' '01123_D1' '01124_D1' '01125_D1' '01126_D1' '01127_D1' '01128_D1' \
+        '01131_D1' '01_M' '02_D' '03_D' '04_D' '05_D' '06_D' '07_D' '08_D' '09_D' '10_D' '10_M' \
+        '11_D' '11_M' '12_D' '12_M' '13_D' '13_M' '14_D' '15_D' '16_D' '17_D' '18_D' '19_D')
+
+COM_DIR="/home/exacloud/lustre1/jjacobs"
+VEP_DIR=$COM_DIR"/programs/VEP/ensembl-vep"
+CACHE_DIR=$COM_DIR"/programs/VEP/ensembl-vep/cache"
+FASTA=$COM_DIR"/GATK_indexes/hg38_osteo/Homo_sapiens_assembly38.fasta"
+
+for i in "${all_runs[@]}"; do
+    ALIGNMENT_RUN="SJOS0"$i
+    INPUT_FILE=$COM_DIR"/data/osteo/"$ALIGNMENT_RUN"/filtered_PASS.vcf.gz"
+    OUTPUT_DIR=$COM_DIR"/data/osteo/"$ALIGNMENT_RUN
+    srun $VEP_DIR/vep -i $INPUT_FILE \
+        --offline \
+        --cache --dir_cache $CACHE_DIR \
+        --refseq \
+        --fasta $FASTA \
+        --force_overwrite \
+        --sift b \
+        --polyphen b \
+        --nearest symbol \
+        --variant_class \
+        --regulatory \
+        --numbers \
+        --hgvs \
+        --symbol \
+        --canonical \
+        -o $OUTPUT_DIR/VEP_prefiltered.txt
+done
