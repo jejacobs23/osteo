@@ -1,0 +1,20 @@
+#!/usr/bin/bash
+#SBATCH --mail-type=ALL,TIME_LIMIT
+#SBATCH --mail-user=jacojam@ohsu.edu
+#SBATCH -A jjacobs
+#SBATCH --time=1-12:00:00
+#SBATCH --error=/home/exacloud/lustre1/jjacobs/osteo_logs/stderr.Make_DFs_by_VEP-consequences
+#SBATCH --output=/home/exacloud/lustre1/jjacobs/osteo_logs/stout.Make_DFs_by_VEP-consequences
+
+#Program to take pathway IDs as an input and create data frames that R can
+#use to produce a Kaplan-Meier curves.
+
+COM_DIR="/home/exacloud/lustre1/jjacobs"
+PYTHON_PROGRAM_DIR=$COM_DIR"/submit_scripts/osteo_Workflow/python"
+
+infile2_dir="Pre_Filtered"
+infile2_name="/VEP_prefiltered_Processed_SeparationPathways_by_VEP-consequences_condensed_sorted.txt"
+outfile_dir="Pre_Filtered"
+outfile_name="_SeparationPathways_by_VEP-consequences.txt"
+
+srun python $PYTHON_PROGRAM_DIR/Make_DFs.py $infile2_dir $infile2_name $outfile_dir $outfile_name

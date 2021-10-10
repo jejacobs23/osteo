@@ -1,0 +1,20 @@
+#!/usr/bin/bash
+#SBATCH --mail-type=ALL,TIME_LIMIT
+#SBATCH --mail-user=jacojam@ohsu.edu
+#SBATCH -A jjacobs
+#SBATCH --time=1-12:00:00
+#SBATCH --error=/home/exacloud/lustre1/jjacobs/osteo_logs/stderr.Pathway_Separation_Analysis_by_VEP-consequeces
+#SBATCH --output=/home/exacloud/lustre1/jjacobs/osteo_logs/stout.Pathway_Separation_Analysis_by_VEP-consequeces
+
+#
+
+INFILE1="VEP_prefiltered_by_VEP-consequences_result.csv"
+OUTFILE1="VEP_prefiltered_SeparationPathways_by_VEP-consequences.txt"
+INFILE2="VEP_prefiltered_SeparationPathways_by_VEP-consequences.txt"
+OUTFILE2="VEP_prefiltered_Processed_SeparationPathways_by_VEP-consequences_condensed.txt"
+
+
+COM_DIR="/home/exacloud/lustre1/jjacobs"
+PYTHON_PROGRAM_DIR=$COM_DIR"/submit_scripts/osteo_Workflow/python"
+
+srun python $PYTHON_PROGRAM_DIR/Pathway_Separation_Analysis.py $INFILE1 $OUTFILE1 $INFILE2 $OUTFILE2
