@@ -1,0 +1,14 @@
+#!/usr/bin/bash
+#SBATCH --mail-type=ALL,TIME_LIMIT
+#SBATCH --mail-user=<email address>
+#SBATCH -A <Slurm Username>
+#SBATCH --time=1-12:00:00
+#SBATCH --error=<pathway to directory for workflow logs>/stderr.Reactome_API_by_VEP-consequences
+#SBATCH --output=<pathway to directory for workflow logs>/stout.Reactome_API_by_VEP-consequences
+
+#This program uses the "requests" module to send http calls to the Reactome API and retrieve the
+#results files from the analyses.
+
+PYTHON_PROGRAM_DIR=<path to directory containing Python programs>
+
+srun python $PYTHON_PROGRAM_DIR/Reactome_API_by_VEP-consequences.py
