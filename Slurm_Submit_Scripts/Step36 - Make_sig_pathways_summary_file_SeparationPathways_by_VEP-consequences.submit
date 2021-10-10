@@ -1,0 +1,14 @@
+#!/usr/bin/bash
+#SBATCH --mail-type=ALL,TIME_LIMIT
+#SBATCH --mail-user=<email address>
+#SBATCH -A <Slurm Username>
+#SBATCH --time=1-12:00:00
+#SBATCH --error=<pathway to directory for workflow logs>/stderr.Make_sig_pathways_summary_file_SeparationPathways_by_VEP-consequences
+#SBATCH --output=<pathway to directory for workflow logs>/stout.Make_sig_pathways_summary_file_SeparationPathways_by_VEP-consequences
+
+#Python program to take the pathway FDR's and create a summary file of the
+#significant pathways
+
+PYTHON_PROGRAM_DIR=<path to directory containing Python programs>
+
+srun python $PYTHON_PROGRAM_DIR/Make_sig_pathways_summary_file_SeparationPathways.py
