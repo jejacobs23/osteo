@@ -1,0 +1,19 @@
+#!/usr/bin/bash
+#SBATCH --mail-type=ALL,TIME_LIMIT
+#SBATCH --mail-user=<email address>
+#SBATCH -A <Slurm Username>
+#SBATCH --time=1-12:00:00
+#SBATCH --error=<pathway to directory for workflow logs>/stderr.survdif_by_VEP-consequences_Separation
+#SBATCH --output=<pathway to directory for workflow logs>/stout.survdif_by_VEP-consequences_Separation
+
+working_dir="Pre_Filtered"
+Pname="/VEP_prefiltered_Processed_SeparationPathways_by_VEP-consequences_condensed_sorted.txt"
+Sname="_SeparationPathways_by_VEP-consequences.txt"
+outfile_name="SeparationPathways_by_VEP-consequences.txt"
+
+
+#
+#
+#Rscipt is located at /usr/bin/Rscript
+
+srun /usr/bin/Rscript <path to directory containing R programs>/survdif.R $working_dir $Pname $Sname $outfile_name
