@@ -1,16 +1,15 @@
 #!/usr/bin/bash
 #SBATCH --mail-type=ALL,TIME_LIMIT
-#SBATCH --mail-user=jacojam@ohsu.edu
-#SBATCH -A jjacobs
+#SBATCH --mail-user=<email address>
+#SBATCH -A <Slurm Username>
 #SBATCH --time=1-12:00:00
-#SBATCH --error=/home/exacloud/lustre1/jjacobs/osteo_logs/stderr.Make_DFs_by_VEP-consequences
-#SBATCH --output=/home/exacloud/lustre1/jjacobs/osteo_logs/stout.Make_DFs_by_VEP-consequences
+#SBATCH --error=<pathway to directory for workflow logs>/stderr.Make_DFs_by_VEP-consequences
+#SBATCH --output=<pathway to directory for workflow logs>/stout.Make_DFs_by_VEP-consequences
 
 #Program to take pathway IDs as an input and create data frames that R can
 #use to produce a Kaplan-Meier curves.
 
-COM_DIR="/home/exacloud/lustre1/jjacobs"
-PYTHON_PROGRAM_DIR=$COM_DIR"/submit_scripts/osteo_Workflow/python"
+PYTHON_PROGRAM_DIR=<path to directory containing Python programs>
 
 infile2_dir="Pre_Filtered"
 infile2_name="/VEP_prefiltered_Processed_SeparationPathways_by_VEP-consequences_condensed_sorted.txt"
