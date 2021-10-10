@@ -3,8 +3,8 @@
 #SBATCH --mail-user=<email address>
 #SBATCH -A <Slurm Username>
 #SBATCH --time=1-12:00:00
-#SBATCH --error=/home/exacloud/lustre1/jjacobs/osteo_logs/stderr.VCF_Tools_filter_by_PASS
-#SBATCH --output=/home/exacloud/lustre1/jjacobs/osteo_logs/stout.VCF_Tools_filter_by_PASS
+#SBATCH --error=<pathway to directory for workflow logs>/stderr.VCF_Tools_filter_by_PASS
+#SBATCH --output=<pathway to directory for workflow logs>/stout.VCF_Tools_filter_by_PASS
 
 all_runs=('01101_M1' '01101_M2' '01101_M3' '01101_M4' '01101_M5' '01101_M6' \
           '01101_M7' '01101_M8' '01103_D1' '01104_M1' '01105_D1' '01106_D1' \
