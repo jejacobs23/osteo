@@ -1,7 +1,7 @@
 #!/usr/bin/bash
 #SBATCH --mail-type=ALL,TIME_LIMIT
-#SBATCH --mail-user=jacojam@ohsu.edu
-#SBATCH -A jjacobs
+#SBATCH --mail-user=<email address>
+#SBATCH -A <Slurm Username>
 #SBATCH --time=1-12:00:00
 #SBATCH --error=/home/exacloud/lustre1/jjacobs/osteo_logs/stderr.VCF_Tools_filter_by_PASS
 #SBATCH --output=/home/exacloud/lustre1/jjacobs/osteo_logs/stout.VCF_Tools_filter_by_PASS
@@ -15,15 +15,11 @@ all_runs=('01101_M1' '01101_M2' '01101_M3' '01101_M4' '01101_M5' '01101_M6' \
           '06_D' '07_D' '08_D' '09_D' '10_D' '10_M' '11_D' '11_M' '12_D' \
           '12_M' '13_D' '13_M' '14_D' '15_D' '16_D' '17_D' '18_D' '19_D')
 
-
-COM_DIR="/home/exacloud/lustre1/jjacobs"
-VCFTOOLS_DIR=$COM_DIR"/programs/vcftools/src/cpp"
-
 for i in "${all_runs[@]}"; do
     ALIGNMENT_RUN="SJOS0"$i
 
-    INPUT_FILE=$COM_DIR"/data/osteo/"$ALIGNMENT_RUN"/filtered.vcf.gz"
-    OUTPUT_DIR=$COM_DIR"/data/osteo/"$ALIGNMENT_RUN
+    INPUT_FILE=<path to input directory>"/"$ALIGNMENT_RUN"/filtered.vcf.gz"
+    OUTPUT_DIR=<path to output directory>"/"$ALIGNMENT_RUN
 
-    srun $VCFTOOLS_DIR/vcftools --gzvcf $INPUT_FILE --remove-filtered-all --recode --out $OUTPUT_DIR/filtered_PASS
+    srun <path to VCFTools directory>/vcftools --gzvcf $INPUT_FILE --remove-filtered-all --recode --out $OUTPUT_DIR/filtered_PASS
 done
