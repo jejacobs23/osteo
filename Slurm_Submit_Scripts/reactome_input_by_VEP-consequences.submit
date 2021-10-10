@@ -1,0 +1,12 @@
+#!/usr/bin/bash
+#SBATCH --mail-type=ALL,TIME_LIMIT
+#SBATCH --mail-user=jacojam@ohsu.edu
+#SBATCH -A jjacobs
+#SBATCH --time=1-12:00:00
+#SBATCH --error=/home/exacloud/lustre1/jjacobs/osteo_logs/stderr.reactome_input_by_VEP-consequences
+#SBATCH --output=/home/exacloud/lustre1/jjacobs/osteo_logs/stout.reactome_input_by_VEP-consequences
+
+
+base_dir="/home/exacloud/lustre1/jjacobs/submit_scripts/osteo_Workflow/python"
+
+srun python $base_dir/reactome_input_by_VEP-consequences.py
