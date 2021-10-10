@@ -1,0 +1,12 @@
+#!/usr/bin/bash
+#SBATCH --mail-type=ALL,TIME_LIMIT
+#SBATCH --mail-user=<email address>
+#SBATCH -A <Slurm Username>
+#SBATCH --time=1-12:00:00
+#SBATCH --error=<pathway to directory for workflow logs>/stderr.reactome_input_by_VEP-consequences
+#SBATCH --output=<pathway to directory for workflow logs>/stout.reactome_input_by_VEP-consequences
+
+
+base_dir=<path to directory containing Python programs>
+
+srun python $base_dir/reactome_input_by_VEP-consequences.py
