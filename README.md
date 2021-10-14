@@ -248,7 +248,7 @@ INPUT_FILE=<path to directory containing the .vcf file downloaded in Step 11>"/d
 
 gatk --java-options "-Xmx4g" IndexFeatureFile -F $INPUT_FILE
 ```
-**Step 13) Base Quality Score Recalibration:** The GATK tool, "BaseRecalibrator" is used to take a .bam file, the GATK reference for hg38 as well as a file containing the known sites of variation in hg38 according to dbsnp (downloaded from GATK site).  It produces a recal_data.table as the output which consists of several tables:
+**Step 13) Base Quality Score Recalibration:** The GATK tool, "BaseRecalibrator" is used to take a .bam file, the GATK reference for hg38 as well as a file containing the known sites of variation in hg38 according to dbsnp (downloaded from GATK site).  Separate BaseRecalibrator steps were carried out for the tumor and matched normal samples.  It produces a recal_data.table as the output which consists of several tables:
 - The list of arguments
 - The quantized qualities table
 - The recalibration table by read group
@@ -263,7 +263,7 @@ OUTPUT_DIR=<path to output directory>"/"$ALIGNMENT_RUN
 
 gatk --java-options "-Xmx4g" BaseRecalibrator -R $REF -I $INPUT_FILE --known-sites $KNOWN_SITES -O $OUTPUT_DIR/recal_data.table
 ```
-**Step 14) Apply Base Quality Score Recalibration:** The GATK tool, ApplyBQSR, is used to recalibrate the base qualities of the input reads based on the recalibration table produced by the "BaseRecalibrator" tool, and outputs a recalibrated .bam file.  This is part of the first step in the BQSR process.  If the before and after tables from the "AnalyzeCovariates" step look good, the .bam file produced from this first pass will then be used in the downstream analysis.  This represents a change from the workflow in GATK3.
+**Step 14) Apply Base Quality Score Recalibration:** The GATK tool, ApplyBQSR, is used to recalibrate the base qualities of the input reads based on the recalibration table produced by the "BaseRecalibrator" tool, and outputs a recalibrated .bam file.  This is part of the first step in the BQSR process.  If the before and after tables from the "AnalyzeCovariates" step look good, the .bam file produced from this first pass will then be used in the downstream analysis.  This represents a change from the workflow in GATK3.  Separate ApplyBQSR steps were carried out for the tumor and matched normal samples.
 ```
 ALIGNMENT_RUN=<Sample ID>
 
@@ -274,7 +274,7 @@ OUTPUT_DIR=<path to output directory>"/"$ALIGNMENT_RUN
 
 gatk --java-options "-Xmx4g" ApplyBQSR -R $REF -I $INPUT_FILE --bqsr-recal-file $RECAL_TABLE -O $OUTPUT_DIR/recal_reads.bam
 ```
-**Step 15) 2nd Pass Base Quality Score Recalibration:** The GATK tool, "BaseRecalibrator" is used to take the .bam file that was produced by the first past BQSR step and run a second pass using the GATK reference for hg38 as well as a file containing the known sites of variation in hg38 according to dbsnp (downloaded from GATK site).  It produces a second recal_data.table as the output that can be used in the "AnalyzeCovariates" step.
+**Step 15) 2nd Pass Base Quality Score Recalibration:** The GATK tool, "BaseRecalibrator" is used to take the .bam file that was produced by the first past BQSR step and run a second pass using the GATK reference for hg38 as well as a file containing the known sites of variation in hg38 according to dbsnp (downloaded from GATK site).  It produces a second recal_data.table as the output that can be used in the "AnalyzeCovariates" step.  Separate BaseRecalibrator steps were carried out for the tumor and matched normal samples.
 ```
 ALIGNMENT_RUN=<Sample ID>
 REF=<path to directory containing the hg38 genome files downloaded in Step 1>"/Homo_sapiens_assembly38.fasta"
@@ -284,8 +284,7 @@ OUTPUT_DIR=<path to output directory>"/"$ALIGNMENT_RUN
 
 gatk --java-options "-Xmx4g" BaseRecalibrator -R $REF -I $INPUT_FILE --known-sites $KNOWN_SITES -O $OUTPUT_DIR/2ndP_recal_data.table
 ```
-**Step 16) Analyze Covariates:** Here, we use the GATK tool, AnalyzeCovariates, to generate a document called "recalibration_plots.pdf" that contains plots that show how the reported base qualities match up to the empirical qualities calculated by the BaseRecalibrator. This is a method of checking the effect of the base recalibration process that will be applied to the sequence data.  For details see "Base Quality Score Recalibration (BQSR)" at
-https://software.broadinstitute.org/gatk/documentation/article?id=11081
+**Step 16) Analyze Covariates:** Here, we use the GATK tool, AnalyzeCovariates, to generate a document called "recalibration_plots.pdf" that contains plots that show how the reported base qualities match up to the empirical qualities calculated by the BaseRecalibrator. This is a method of checking the effect of the base recalibration process that will be applied to the sequence data.  Separate AnalyzeCovariates steps were carried out for the tumor and matched normal samples.  For details see "Base Quality Score Recalibration (BQSR)" at https://software.broadinstitute.org/gatk/documentation/article?id=11081
 
 Takes as input a genome reference file, the before recal_data.table and the after post-recal_data.table.
 ```
