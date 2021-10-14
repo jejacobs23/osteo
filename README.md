@@ -1,5 +1,5 @@
 # Osteo-WGS-SNV-Workflow
-Workflow for identifying single-nucleotide-variants (SNVs) in osteosarcoma Whole Genome Sequencing (WGS) samples
+Workflow for identifying single-nucleotide-variants (SNVs) in osteosarcoma Whole Genome Sequencing (WGS) samples, and then overlaying those SNVs onto annotated Reactome pathways.
 
 # Version Notes
 - These analyses were carried out on the OHSU cluster computing system (Exacloud) using CentOS 7.7.1908 unless otherwise noted
@@ -11,7 +11,7 @@ Workflow for identifying single-nucleotide-variants (SNVs) in osteosarcoma Whole
 
 # Workflow
 **Notes:**
-- Each sample has it's own directory for output files.  Each individual directory is labeled by the "Sample ID"
+- Each sample has its own directory for output files.  Each individual directory is labeled by the "Sample ID"
 
 **Step 1) Downloading the hg38 genome files:** The following files were downloaded from the GATK resource bundle on 9/18/2018 and saved to a directory named "hg38_osteo".  The .fasta.gz file was then unzipped.  
 - Homo_sapiens_assembly38.fasta.gz
@@ -29,7 +29,7 @@ wget ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/Homo_sapiens_a
 
 wget ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/hg38/Homo_sapiens_assembly38.fasta.64.alt
 ```
-- Note: The .fasta.64.alt file is used with BWA-MEM for ALT-aware alignment (Step ).  Once downloaded it was moved to the same directory the holds the BWA genome index files created in Step 2.  
+- Note: The .fasta.64.alt file is used with BWA-MEM for ALT-aware alignment (Steps 6-7).  Once downloaded it was moved to the same directory the holds the BWA genome index files created in Step 2.  
 
 The following files were downloaded from the GATK resource bundle on 4/21/2019 and saved to the "hg38_osteo" directory
 - af-only-gnomad.hg38.vcf.gz
@@ -46,7 +46,7 @@ wget ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/Mutect2/GetPileupSu
 wget ftp://gsapubftp-anonymous@ftp.broadinstitute.org/bundle/Mutect2/GetPileupSummaries/small_exac_common_3.hg38.vcf.gz.tbi
 ```
 
-**Step 2) Create a BWA genome index files:** The BWA "index" command is used to create the genome index files from the previously downloaded hg38 .fasta genome sequence.  These files will then be used in the upcoming alignment step.  BWA places the output files into the same foloder as the genome .fasta file was called from.  The BWA index files were then moved to a directory named "BWA_indexes/GATK_hg38" for later use.
+**Step 2) Create a BWA genome index files:** The BWA "index" command is used to create the genome index files from the previously downloaded hg38 .fasta genome sequence.  These files will then be used in the upcoming alignment step.  BWA places the output files into the same folder as the genome .fasta file was called from.  The BWA index files were then moved to a directory named "BWA_indexes/GATK_hg38" for later use.
 
 The -a bwtsw flag will specify that we want to use the indexing algorithm that is capable of handling the whole human genome.
 
@@ -60,13 +60,13 @@ bwa-0.7.17/bwa index -a bwtsw $fasta_dir/Homo_sapiens_assembly38.fasta
 Standard tags cleared by default are NM, UQ, PG, MD, MQ, SA, MC and AS.  Additionally, the OQ tag is removed by the default "RESTORE_ORIGINAL_QUALITIES" parameter.  Any nonstandard tags should be removed.  To list all tags within a BAM, use the command: 
 `samtools view input.bam | cut -f 12- | tr '\t' '\n' | cut -d ':' -f 1 | awk '{ if(!x[$1]++) { print }}'` You should leave the RG tag.
 
-The "SANITIZE" option removes reads that cause problems for certain tools such as MarkIlluminaAdapters. It removeds paired reads with missing mates, duplicate records and records with mismatches in length of bases and qualities.
+The "SANITIZE" option removes reads that cause problems for certain tools such as MarkIlluminaAdapters. It removes paired reads with missing mates, duplicate records and records with mismatches in length of bases and qualities.
 
 For paired read files: because each read in a pair has the same query name, they are listed consecutively.  We make sure to alter the previous sort order.  Coordinate sorted reads result in the aligner incorrectly estimating insert size from blocks of paired reads as they are not randomly distributed.
 
-I use the "OUTPUT_BY_READGROUP=true" option in order to create a separate file for each readgroup.  This is neccessary because there are two different MarkDuplicate steps (one before merging each readgroup and one after merging).  This ensures that both optical and PCR duplicates are identified (see GATK tutorial 6483)
+I use the "OUTPUT_BY_READGROUP=true" option in order to create a separate file for each readgroup.  This is necessary because there are two different MarkDuplicate steps (one before merging each readgroup and one after merging).  This ensures that both optical and PCR duplicates are identified (see GATK tutorial 6483)
 
-The "MAX_DISCARD_FRACTION" option is informational only.  It does nto affect processing.
+The "MAX_DISCARD_FRACTION" option is informational only.  It does not affect processing.
 
 The "SORT_ORDER=queryname", "RESTORE_ORIGINAL_QUALITIES=true", REMOVE_DUPLICATE_INFORMATION=true" and "REMOVE_ALIGNMENT_INFORMATION=true" options are all default but I kept them in the code anyway.
 
@@ -133,7 +133,7 @@ the "-p" flag tells the program that the input contains interleaved paired reads
 ```
 fasta_dir=<path to BWA index files created in Step 2>
 ALIGNMENT_RUN=<Sample ID>
-input=<path to input directory>"/"$ALIGNMENT_RUN"/lane_"${SLURM_ARRAY_TASK_ID}"_interleaved.fastq"
+input=<path to input directory>"/"$ALIGNMENT_RUN"/interleaved.fastq"
 
 bwa-0.7.17/bwa mem -M -t 32 -p $fasta_dir/Homo_sapiens_assembly38.fasta $input
 ```
@@ -143,24 +143,24 @@ ALIGNMENT_RUN=<Sample ID>
 k8_DIR=<path to BWA directory>"/bwakit/bwa.kit"
 POST_ALT_DIR=<path to BWA directory>"/bwa-0.7.17/bwakit"
 ALT_INDEX=<path to BWA index files created in Step 2>"/Homo_sapiens_assembly38.fasta.64.alt"
-ALIGNED=<path to input directory>"/"$ALIGNMENT_RUN"/aligned_lane_.sam"
+ALIGNED=<path to input directory>"/"$ALIGNMENT_RUN"/aligned.sam"
 OUTPUT_DIR=<path to output directory>"/"$ALIGNMENT_RUN
 
-$k8_DIR/k8 $POST_ALT_DIR/bwa-postalt.js $ALT_INDEX $ALIGNED > $OUTPUT_DIR/postalt_aligned_lane_.sam
+$k8_DIR/k8 $POST_ALT_DIR/bwa-postalt.js $ALT_INDEX $ALIGNED > $OUTPUT_DIR/postalt_aligned.sam
 ```
 - Note that the ".64" in the ALT_INDEX file indicates that this index file was generated with the version 0.6 or later of BWA and is the 64-bit index (as opposed to files generated by earlier versions, which were 32-bit).  
 - Notes on ALT-aware alignment are described in this tutorial: https://software.broadinstitute.org/gatk/documentation/article.php?id=8017
-- The ".fasta.64.alt" file is the ALT index file.  BWA-MEM uses this file to prioritize primary assembly alignments for reads that can map to both the primary assembly and an alternate contig.  The ALT index also contains decoy contig records as unmappped SAM records.  This is relevant to the postalt-processing step.  See https://software.broadinstitute.org/gatk/documentation/article.php?id=8017 for more details.
+- The ".fasta.64.alt" file is the ALT index file.  BWA-MEM uses this file to prioritize primary assembly alignments for reads that can map to both the primary assembly and an alternate contig.  The ALT index also contains decoy contig records as unmapped SAM records.  This is relevant to the postalt-processing step.  See https://software.broadinstitute.org/gatk/documentation/article.php?id=8017 for more details.
 - Note that for this to work, the .fasta.64.alt basename needs to be the same as the other index and .dict files ("Homo_sapiens_assembly38" in this case).
 
 **Step 8) MergeBamAlignments:** Here, we use Picard with the "MergeBamAlignment" function to merge defined information from the unmapped BAM with that of the aligned BAM to conserve read data (original read information and base quality scores).  The tool also generates additional meta information based on the information generated by the aligner, which may alter aligner-generated designations (mate info and secondary alignment flags). The tool then makes adjustments so that all meta information is congruent (e.g. read and mate strand info based on proper mate designations).  For details on this, see the GATK Tutorial 6483 at:
 https://software.broadinstitute.org/gatk/documentation/article?id=6483.  Separate MergeBamAlignment steps were carried out for the tumor and matched normal samples.
 
-The aligned BAM generated from the BWA_mem_align step lacks read group info and certain tags (UQ, MC, MQ as examples). It has hard-clipped sequences from split reads and altered base qualities.  MergeBamAlignment adjusts the read and read mate strand orientations for reads in a proper pair.  Finally, the alignment records are sorted by query name. MergeBamAlignment applies read group info from the uBAM and retains the program group info from the aligned BAM. In restoring original sequences, the tool adjusts CIGAR strings from hard-clipped to soft-clipped.  If the alignment file is missing reads present in the unaligned file, then these are retained as unmapped records. Additionally, the tool evaluates primary alignment designations according to a user-specified stragegy (e.g. for optimal mate paie mapping, and changes secondary alignment and mate unmapped flags based on its calculations).
+The aligned BAM generated from the BWA_mem_align step lacks read group info and certain tags (UQ, MC, MQ as examples). It has hard-clipped sequences from split reads and altered base qualities.  MergeBamAlignment adjusts the read and read mate strand orientations for reads in a proper pair.  Finally, the alignment records are sorted by query name. MergeBamAlignment applies read group info from the uBAM and retains the program group info from the aligned BAM. In restoring original sequences, the tool adjusts CIGAR strings from hard-clipped to soft-clipped.  If the alignment file is missing reads present in the unaligned file, then these are retained as unmapped records. Additionally, the tool evaluates primary alignment designations according to a user-specified strategy (e.g. for optimal mate pair mapping, and changes secondary alignment and mate unmapped flags based on its calculations).
 
 The "PRIMARY_ALIGNMENT_STRATEGY=MostDistant" option marks primary alignments based on the alignment pair with the largest insert size.  This strategy is based on the premise that of chimeric sections of a read aligning to consecutive regions, the alignment giving the largest insert size with the mate gives the most information.
 
-The "MAX_INSERTIONS_OR_DELETIONS=-1" option retains reads irregardless of the number of insertons and deletions.
+The "MAX_INSERTIONS_OR_DELETIONS=-1" option retains reads regardless of the number of insertions and deletions.
 
 The "ALIGNER_PROPER_PAIR_FLAGS" option is set to its default.  Thus, MergeBamAlignment will reassess and reassign proper pair designations made by the aligner.
 
@@ -169,7 +169,7 @@ The "ATTRIBUTES_TO_RETAIN=XS" option tells the program to keep reads flagged by 
 The "CLIP_ADAPTERS=false" option leaves reads unclipped.
 ```
 ALIGNMENT_RUN=<Sample ID>
-INPUT_ALIGNED=<path to input directory>"/"$ALIGNMENT_RUN"/postalt_aligned_lane_.sam"
+INPUT_ALIGNED=<path to input directory>"/"$ALIGNMENT_RUN"/postalt_aligned.sam"
 INPUT_uBAM=<path to input directory>"/"$ALIGNMENT_RUN"/"<name of uBAM file matching the lane assignment of the ALIGNED file>
 OUTPUT_DIR=<path to output directory>"/"$ALIGNMENT_RUN
 FASTA_DIR=<path to directory containing the hg38 genome files downloaded in Step 1>
@@ -177,7 +177,7 @@ FASTA_DIR=<path to directory containing the hg38 genome files downloaded in Step
 java -Xmx16G -jar picard.jar MergeBamAlignment \
     ALIGNED_BAM=$INPUT_ALIGNED \
     UNMAPPED_BAM=$INPUT_uBAM \
-    O=$OUTPUT_DIR/MergedBamAlignment_postalt_lane_.bam \
+    O=$OUTPUT_DIR/MergedBamAlignment_postalt.bam \
     R=$FASTA_DIR/Homo_sapiens_assembly38.fasta \
     CREATE_INDEX=true \
     ADD_MATE_CIGAR=true \
@@ -189,9 +189,9 @@ java -Xmx16G -jar picard.jar MergeBamAlignment \
     ATTRIBUTES_TO_RETAIN=XS \
     TMP_DIR=<path to temp directory>/working_temp_mban
 ```
-**Step 9) Merge BAM files:** Here, we use Picard and the "MergeSamFiles" function to take the individual alignemnts from each of the WGS lanes and merge them into one complete .bam file
+**Step 9) Merge BAM files:** Here, we use Picard and the "MergeSamFiles" function to take the individual alignments from each of the WGS lanes and merge them into one complete .bam file.  Separate MergeSamFiles steps were carried out for the tumor and matched normal samples.  
 
-I have also included the "SORT_ORDER=coordinate" option in order to ensure that the .bam file is sorted correctly for downstread applications
+I have also included the "SORT_ORDER=coordinate" option in order to ensure that the .bam file is sorted correctly for downstream applications
 ```
 #for n lanes
 
@@ -219,7 +219,7 @@ java -Xmx8G -jar picard.jar MergeSamFiles \
 ```
 **Step 10) Mark Duplicates:** Here, we use Picard with the "MarkDuplicates" function to mark any duplicate reads from a sequence alignment file.  Separate MarkDuplicate steps were carried out for the tumor and matched normal samples.
 
-Per the GATK pipeline, I've included the CREATE_INDEX=true command which will create a index for the outputed .bam file.  This is needed
+Per the GATK pipeline, I've included the CREATE_INDEX=true command which will create a index for the outputted .bam file.  This is needed
 for downstream GATK tools
 
 Also per the GATK pipeline, I've included the VALIDATION_STRINGENCY=SILENT command.
@@ -250,9 +250,9 @@ gatk --java-options "-Xmx4g" IndexFeatureFile -F $INPUT_FILE
 ```
 **Step 13) Base Quality Score Recalibration:** The GATK tool, "BaseRecalibrator" is used to take a .bam file, the GATK reference for hg38 as well as a file containing the known sites of variation in hg38 according to dbsnp (downloaded from GATK site).  It produces a recal_data.table as the output which consists of several tables:
 - The list of arguments
-- The quantized qualities talbe
+- The quantized qualities table
 - The recalibration table by read group
-- The recalibration talbe by quality score
+- The recalibration table by quality score
 - The recalibration table for all the optional covariates
 ```
 ALIGNMENT_RUN=<Sample ID>
@@ -317,7 +317,7 @@ gatk Mutect2 \
     --disable-read-filter MateOnSameContigOrNoMappedMateReadFilter \
     -O $OUT_FILE
 ```
-**Step 18) Create Somatic Panel of Normals:** Here we use the GATK tool, CreateSomaticPanelOfNormals, in order to create a panel of normals(PONs) containing germline and aftifactual sites for use with Mutect2.  The tool takes multiple normal sample callsets produced by Mutect2's tumor-only mode and collates sites present in two or more samples into a sites-only VCF. The PON captures common artifactual and germline variant sites.  Mutect2 then uses the PON to filter variants at the site level.
+**Step 18) Create Somatic Panel of Normals:** Here we use the GATK tool, CreateSomaticPanelOfNormals, in order to create a panel of normals(PONs) containing germline and artifactual sites for use with Mutect2.  The tool takes multiple normal sample callsets produced by Mutect2's tumor-only mode and collates sites present in two or more samples into a sites-only VCF. The PON captures common artifactual and germline variant sites.  Mutect2 then uses the PON to filter variants at the site level.
 ```
 #For n normal samples
 
@@ -337,7 +337,7 @@ gatk CreateSomaticPanelOfNormals \
 
 This produces a raw unfiltered callset of variants (.vcf.gz file) and a reassembled reads BAM (.bam file).  The "-tumor" and "-normal" entries are the sample's read group sample name (the SM field value).
 
-The germline resource must contain allele-specific frequencies (i.e. must contain the AF annotation in the INFO field).  The tool annotates variant allele frequencies with the population allele frequencies. When using a population germline resource, consider adjusting the "--af-of-alleles-not-in-resource" paramter from its default of 0.001.  The gnomAD resource represents ~200K exomes and ~16K genomes.  If working with whole genome data --as we are -- we should adjust the value to 1/(2*genome samples) or 0.00003125. However, with the updated version (4.1.2.0), apparently this is no longer needed (per @davidben from Broad).
+The germline resource must contain allele-specific frequencies (i.e. must contain the AF annotation in the INFO field).  The tool annotates variant allele frequencies with the population allele frequencies. When using a population germline resource, consider adjusting the "--af-of-alleles-not-in-resource" parameter from its default of 0.001.  The gnomAD resource represents ~200K exomes and ~16K genomes.  If working with whole genome data --as we are -- we should adjust the value to 1/(2*genome samples) or 0.00003125. However, with the updated version (4.1.2.0), apparently this is no longer needed (per @davidben from Broad).
 
 For our somatic analysis that uses alt-aware and post-alt processed alignments to GRCh38, we disable a specific read filter with "--disable-read-filter MateOnSameContigOrNoMappedMateReadFilter".  This filter removes from analysis paired reads whose mate maps to a different contig.  Because of the way BWA crisscrosses mate information for mates that align better to alternate contigs, we want to include these types of reads in our analysis.  Otherwise, we may miss out on detecting SNVs and indels associated with alternate haplotypes.  Again (per @davidben), this is no longer needed with gatk-4.1.2.0 as this is now the default.
 
@@ -455,7 +455,7 @@ gatk LearnReadOrientationModel \
     -I $INPUT_DIR/f1r2_<n>.tar.gz \
     -O $OUTPUT_DIR/read-orientation-model.tar.gz
 ```
-**Step 24) Get pileup summaries:** The GATK tool ,GetPileupSummaries, is used in order to analyze the tumor or normal .bam file.  It summarizes counts of reads that support reference, alternate andother alleles for given sites in order to be used downstread for estimation of contamination. This tool requires a population germline resource containing only common biallelic variants.  It also requires the population allele frequencies (AF) to be presentin the INFO field of the population germline resource. Note: The "-L" and "-V" don't have to be the same.  For example, you could have a variants file and or "-L" you could have a subset of intervals that you want to evaluate over.  Separate GetPileUpSummaries runs are done for tumor and normal samples.  
+**Step 24) Get pileup summaries:** The GATK tool ,GetPileupSummaries, is used in order to analyze the tumor or normal .bam file.  It summarizes counts of reads that support reference, alternate and other alleles for given sites in order to be used downstream for estimation of contamination. This tool requires a population germline resource containing only common biallelic variants.  It also requires the population allele frequencies (AF) to be present in the INFO field of the population germline resource. Note: The "-L" and "-V" don't have to be the same.  For example, you could have a variants file and or "-L" you could have a subset of intervals that you want to evaluate over.  Separate GetPileUpSummaries runs are done for tumor and normal samples.  
 
 The output is a 6-column table
 ```
@@ -535,13 +535,13 @@ done
 ```
 **Step 29) Filter variants with VEP:** The Ensemble Variant Effect Predictor (VEP) tool determines the effect of variants (SNPs, insertions, deletions, CNVs or structural variants) on genes, transcripts and protein sequence, as well as regulatory regions.
 
-The "--cache" option tells VEP to used the local cache files for annotations.  The cache files are located in /home/exacloud/lustre1/jjacobs/programs/VEP/ensembl-vep/cache
+The "--cache" option tells VEP to use the local cache files for annotations.
 
 The "--CACHEDIR" option is needed to tell VEP where the cache files are located.
 
 The "--force_overwrite" option tells VEP to write over files in the output directory that have the same name as the new output file.
 
-The "--sift b" option tells VEP to output the SIFT predicitons and the scores for the inputed variants.
+The "--sift b" option tells VEP to output the SIFT predictions and the scores for the inputted variants.
 ```
 all_runs=('01101_M1' '01101_M2' '01101_M3' '01101_M4' '01101_M5' '01101_M6' '01101_M7' '01101_M8' \
         '01103_D1' '01104_M1' '01105_D1' '01106_D1' '01107_M1' '01107_M2' '01108_M1' '01109_D1' \
@@ -579,12 +579,12 @@ done
 
 **Step 31) Identify aberrant pathways via the Reactome API:**  The Python program, Reactome_API_by_VEP-consequences.py, is used to take the genes that have been identified as mutated by Mutect2 and are associated with the consequences listed in Step 29 and input them into Reactome via the Reactome API.  
 
-**Step 32) Compile Reactome results across all samples:** The Python program, Analyze_Reactome_Results_by_VEP-consequences, is used to compile all the "results.cvs" files from the Reactome analysis and create an output file with the Reaction ID's and how many samples had aborations associated with that particular pathway.
+**Step 32) Compile Reactome results across all samples:** The Python program, Analyze_Reactome_Results_by_VEP-consequences, is used to compile all the "results.cvs" files from the Reactome analysis and create an output file with the Reaction ID's and how many samples had aberrations associated with that particular pathway.
 
-**Step 33) Find pathways that adequately separate samples with and without aberrations:** The Python program, Pathway_Separation_Analysis.py, is used to identify aberrant Reactome pathways the meet the requirements for number of samples with and without aberrations.  A summary file is outputed.  
+**Step 33) Find pathways that adequately separate samples with and without aberrations:** The Python program, Pathway_Separation_Analysis.py, is used to identify aberrant Reactome pathways the meet the requirements for number of samples with and without aberrations.  A summary file is outputted.  
 
 **Step 34) Use time-to-event data to create a survival dataframe for each Reactome pathway ID:** The Python program, Make_DFs.py, is used to take pathway IDs as an input and create data frames that R can use to produce a Kaplan-Meier curves.  This program requires survival information for the subjects being analyzed.  
 
-**Step 35) Determine the level of significance of the relationship between each Reactome pathway and Overall Survival:** The R program, survdif.R, is used to compile a list of all the identified Reactome pathways and determine the level of significance each pathway has in regards to it's association with Overall Survival.  The p-values are used to calculate the false disocvery rate (FDR) in order to account for multiple hypotheses testing.
+**Step 35) Determine the level of significance of the relationship between each Reactome pathway and Overall Survival:** The R program, survdif.R, is used to compile a list of all the identified Reactome pathways and determine the level of significance each pathway has in regards to it's association with Overall Survival.  The p-values are used to calculate the false discovery rate (FDR) in order to account for multiple hypotheses testing.
 
 **Step 36) Compile a list of Reactome pathways that are significantly associated with Overall Survival:** The Python program, Make_sig_pathways_summary_file_by_VEP-consequences.py, is used to compile a summary file of pathways that meet the FDR threshold for significant association with Overall Survival.  
