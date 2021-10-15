@@ -476,8 +476,6 @@ OUTPUT_DIR=<path to output directory>"/"$TUMOR_ALIGNMENT_RUN
 gatk CalculateContamination -I $INPUT_FILE -matched $NORMAL -O $OUTPUT_DIR/tumor_calculatecontamination.table
 ```
 **Step 26) Filter Mutect mutation calls:** The GATK tool, FilterMutectCalls, is used in order to determine whether a call is a confident somatic call.  This is based on the workflow described here: https://software.broadinstitute.org/gatk/documentation/article?id=24057
-
-They include the "--tumor-segmentation segments.table" argument in their example. However, no explanation is given for this.  Thus, I have not included it in my analysis.
 ```
 ALIGNMENT_RUN=<Sample ID>
 REF=<path to directory containing the hg38 genome files downloaded in Step 1>"/Homo_sapiens_assembly38.fasta"
